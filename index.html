@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>小菠萝的音乐课堂</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -20,6 +21,10 @@
             font-size: 24px; cursor: pointer; border: none; background: none; color: #333;
         }
         .nav-title { font-size: 18px; font-weight: 700; color: #333; display: flex; align-items: center; gap: 4px; }
+        .cloud-badge {
+            font-size: 11px; background: #E8F5E9; color: #43A047; padding: 3px 8px;
+            border-radius: 10px; font-weight: 600; margin-left: 6px;
+        }
         .header-banner {
             background: linear-gradient(135deg, #FFD93D 0%, #FF9A8B 50%, #FFA07A 100%);
             padding: 30px 20px 50px; text-align: center; position: relative; overflow: hidden; border-radius: 0 0 30px 30px;
@@ -91,894 +96,980 @@
         .empty-state { text-align: center; padding: 50px 20px 30px; }
         .empty-icon { font-size: 60px; margin-bottom: 20px; opacity: 0.6; }
         .empty-text { font-size: 15px; color: #ccc; line-height: 1.6; }
-        .footer-encourage { text-align: center; padding: 40px 20px 80px; }
-        .footer-pineapple { font-size: 36px; margin-bottom: 10px; }
-        .footer-text { font-size: 14px; color: #ccc; }
-        .fab {
-            position: fixed; bottom: 65px; right: 20px; width: 66px; height: 66px; border-radius: 50%;
-            background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; align-items: center;
-            justify-content: center; font-size: 30px; cursor: pointer; z-index: 50; transition: all 0.2s; border: 1px solid #f0f0f0;
-        }
-        .fab:active { transform: scale(0.92); }
-        .list-item {
-            background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s;
-        }
-        .list-item:active { transform: scale(0.98); }
-        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .item-title { font-size: 15px; font-weight: 700; color: #333; }
-        .item-date { font-size: 12px; color: #FF8C69; background: #FFF3EE; padding: 3px 10px; border-radius: 10px; }
-        .item-desc { font-size: 13px; color: #999; line-height: 1.6; }
-        .item-homework {
-            margin-top: 10px; background: #FFF9E6; border-radius: 10px; padding: 10px 12px;
-            font-size: 12px; color: #E65100; line-height: 1.6;
-        }
-        .item-homework .hw-label { font-weight: 700; margin-bottom: 4px; }
-        .item-tags { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
-        .item-tag { font-size: 11px; color: #FF6B9D; background: #FFF0F5; padding: 2px 10px; border-radius: 8px; }
-        .sheet-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .sheet-card {
-            background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-            cursor: pointer; transition: all 0.2s;
-        }
-        .sheet-card:active { transform: scale(0.96); }
-        .sheet-cover {
-            height: 140px; background: linear-gradient(135deg, #FFE4B5, #FFDAB9);
-            display: flex; align-items: center; justify-content: center; font-size: 40px; overflow: hidden;
-        }
-        .sheet-cover img { width: 100%; height: 100%; object-fit: cover; }
-        .sheet-info { padding: 12px; }
-        .sheet-info h4 { font-size: 14px; color: #333; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sheet-info p { font-size: 11px; color: #ccc; }
-        .media-item {
-            background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px;
-            display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-            cursor: pointer; transition: all 0.2s;
-        }
-        .media-item:active { transform: scale(0.98); }
-        .media-cover {
-            width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #FFB6C1, #FFA07A);
-            display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; overflow: hidden;
-        }
-        .media-info { flex: 1; min-width: 0; }
-        .media-info h4 { font-size: 15px; color: #333; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .media-info p { font-size: 12px; color: #ccc; }
-        .media-play {
-            width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #FFD93D, #FF8C69);
-            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; flex-shrink: 0;
-        }
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal {
-            background: #fff; border-radius: 24px 24px 0 0; padding: 24px 20px 30px;
-            width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease;
-        }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .modal-handle { width: 40px; height: 4px; background: #eee; border-radius: 2px; margin: 0 auto 20px; }
-        .modal h3 { font-size: 18px; color: #333; margin-bottom: 20px; text-align: center; font-weight: 700; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 8px; font-weight: 600; }
-        .form-group input, .form-group textarea {
-            width: 100%; padding: 12px 14px; border: 1.5px solid #f0f0f0; border-radius: 12px;
-            font-size: 14px; color: #333; background: #fafafa; outline: none; transition: border-color 0.2s; font-family: inherit;
-        }
-        .form-group input:focus, .form-group textarea:focus { border-color: #FF8C69; background: #fff; }
-        .form-group textarea { resize: vertical; min-height: 70px; }
-        .upload-area {
-            border: 2px dashed #FFD93D; border-radius: 14px; padding: 28px 20px; text-align: center;
-            background: #FFFDF5; cursor: pointer; transition: all 0.2s; position: relative;
-        }
-        .upload-area:hover { border-color: #FF8C69; background: #FFF9E6; }
-        .upload-area:active { background: #FFF3E0; }
-        .upload-area .upload-icon { font-size: 40px; margin-bottom: 10px; }
-        .upload-area .upload-text { font-size: 15px; color: #666; font-weight: 600; }
-        .upload-area .upload-hint { font-size: 11px; color: #ccc; margin-top: 6px; line-height: 1.5; }
-        .upload-area input[type="file"] {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-        }
-        .upload-loading { display: none; text-align: center; padding: 20px; }
-        .upload-loading.show { display: block; }
-        .spinner {
-            width: 36px; height: 36px; border: 3px solid #FFE082; border-top-color: #FF8C69;
-            border-radius: 50%; margin: 0 auto 12px; animation: spin 0.8s linear infinite;
+        .loading-state { text-align: center; padding: 60px 20px; }
+        .loading-spinner {
+            width: 40px; height: 40px; border: 3px solid #FFE082; border-top-color: #FF8C69;
+            border-radius: 50%; margin: 0 auto 16px; animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .upload-loading p { font-size: 13px; color: #999; }
-        .upload-progress { margin-top: 10px; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
-        .upload-progress-bar { height: 100%; background: linear-gradient(90deg, #FFD93D, #FF8C69); border-radius: 3px; width: 0%; transition: width 0.3s; }
-        .file-preview { margin-top: 12px; border-radius: 10px; overflow: hidden; background: #f5f5f5; }
-        .file-preview img, .file-preview video { width: 100%; max-height: 200px; object-fit: cover; display: block; }
-        .file-preview audio { width: 100%; display: block; }
-        .file-name { padding: 10px 12px; font-size: 12px; color: #666; background: #fafafa; display: flex; align-items: center; gap: 6px; word-break: break-all; }
-        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
-        .modal-actions button { flex: 1; padding: 14px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-cancel { background: #f5f5f5; color: #999; }
-        .btn-submit { background: linear-gradient(135deg, #FFD93D, #FF8C69); color: #fff; }
-        .btn-submit:active { transform: scale(0.98); }
-        .btn-submit:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-        .player-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.9); z-index: 300; align-items: center; justify-content: center; padding: 20px;
+        .lesson-card {
+            background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04); position: relative;
         }
-        .player-overlay.show { display: flex; }
-        .player-box { width: 100%; max-width: 700px; background: #1a1a1a; border-radius: 16px; overflow: hidden; position: relative; }
-        .player-close {
-            position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; background: rgba(0,0,0,0.5);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; cursor: pointer; z-index: 10; border: none;
+        .lesson-card .lesson-date {
+            font-size: 12px; color: #FF8C69; font-weight: 600; margin-bottom: 6px;
         }
-        .player-box video, .player-box img { width: 100%; max-height: 75vh; object-fit: contain; display: block; background: #000; }
-        .player-box audio { width: 100%; display: block; background: #1a1a1a; }
-        .player-title { padding: 14px 16px; color: #fff; font-size: 15px; font-weight: 600; background: #222; }
-        .detail-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 250; align-items: center; justify-content: center; padding: 20px;
+        .lesson-card .lesson-title {
+            font-size: 16px; font-weight: 700; color: #333; margin-bottom: 8px;
         }
-        .detail-overlay.show { display: flex; }
-        .detail-box {
-            background: #fff; border-radius: 20px; padding: 24px; width: 100%; max-width: 420px;
-            max-height: 80vh; overflow-y: auto; animation: fadeIn 0.2s ease;
+        .lesson-card .lesson-content {
+            font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 8px;
         }
-        .detail-box h3 { font-size: 18px; color: #333; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px dashed #FFE082; }
-        .detail-row { margin-bottom: 14px; }
-        .detail-row .dt-label { font-size: 12px; color: #FF8C69; font-weight: 700; margin-bottom: 4px; }
-        .detail-row .dt-content { font-size: 14px; color: #555; line-height: 1.7; }
-        .detail-homework { background: #FFF9E6; border-radius: 12px; padding: 14px; margin-top: 8px; }
-        .detail-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .detail-actions button { flex: 1; padding: 12px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-edit { background: #FFF3E0; color: #FF8C69; }
-        .btn-edit:active { background: #FFE0B2; }
-        .btn-delete { background: #FFEBEE; color: #E53935; }
-        .btn-delete:active { background: #FFCDD2; }
-        .btn-ok { background: linear-gradient(135deg, #FFD93D, #FF8C69); color: #fff; }
-        .zoom-viewer {
-            width: 100%; height: 75vh; overflow: hidden; background: #000;
-            position: relative; touch-action: none;
+        .lesson-card .lesson-homework {
+            background: #FFF3E0; border-radius: 10px; padding: 10px 12px; margin-top: 8px;
         }
-        .zoom-viewer img {
-            max-width: none; max-height: none; width: 100%; height: 100%;
-            object-fit: contain; transform-origin: center center; transition: transform 0.1s ease-out;
-            user-select: none; -webkit-user-drag: none;
+        .lesson-card .homework-label { font-size: 12px; color: #FF8C69; font-weight: 700; margin-bottom: 4px; }
+        .lesson-card .homework-text { font-size: 13px; color: #E65100; line-height: 1.5; }
+        .lesson-card .lesson-tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .lesson-card .tag {
+            font-size: 11px; background: #FCE4EC; color: #FF6B9D; padding: 3px 8px; border-radius: 8px; font-weight: 500;
         }
-        .zoom-hint {
-            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; padding: 6px 14px;
-            border-radius: 14px; z-index: 5; pointer-events: none;
+        .lesson-card .card-actions {
+            position: absolute; top: 12px; right: 12px; display: flex; gap: 6px;
+        }
+        .card-action-btn {
+            width: 28px; height: 28px; border: none; background: #F5F5F5; border-radius: 8px;
+            font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .sheet-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-bottom: 20px;
+        }
+        .sheet-card {
+            background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            position: relative;
+        }
+        .sheet-thumb {
+            width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #F5F5F5; cursor: pointer;
+        }
+        .sheet-info { padding: 10px 12px; }
+        .sheet-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 2px; }
+        .sheet-date { font-size: 11px; color: #999; }
+        .sheet-delete {
+            position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
+            background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%;
+            font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .media-card {
+            background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        .media-card .media-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .media-card .media-desc { font-size: 13px; color: #666; margin-bottom: 10px; line-height: 1.5; }
+        .media-card video, .media-card audio { width: 100%; border-radius: 8px; }
+        .media-card .media-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+        .delete-btn {
+            padding: 5px 12px; background: #FFEBEE; color: #E53935; border: none;
+            border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        .fab {
+            position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px;
+            background: linear-gradient(135deg, #FF6B9D, #FF8C69); color: #fff; border: none;
+            border-radius: 50%; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(255,107,157,0.4);
+            display: flex; align-items: center; justify-content: center; z-index: 50;
+            transition: transform 0.2s;
+        }
+        .fab:active { transform: scale(0.95); }
+        .footer {
+            text-align: center; padding: 30px 20px 100px; font-size: 14px; color: #FF8C69; font-weight: 600;
+        }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff; border-radius: 20px; width: 100%; max-width: 400px;
+            max-height: 85vh; overflow-y: auto; padding: 24px; position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+            background: #F5F5F5; border: none; border-radius: 50%; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666;
+        }
+        .modal-title { font-size: 20px; font-weight: 800; color: #333; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; color: #333; margin-bottom: 6px; }
+        .form-input, .form-textarea, .form-select {
+            width: 100%; padding: 12px 14px; border: 1.5px solid #E0E0E0; border-radius: 12px;
+            font-size: 14px; color: #333; outline: none; transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #FF6B9D; }
+        .form-textarea { min-height: 80px; resize: vertical; }
+        .submit-btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #FF6B9D, #FF8C69);
+            color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 700;
+            cursor: pointer; margin-top: 8px;
+        }
+        .upload-area {
+            border: 2px dashed #FFB6C1; border-radius: 14px; padding: 30px 20px; text-align: center;
+            cursor: pointer; transition: all 0.2s; background: #FFF5F8;
+        }
+        .upload-area:active { background: #FFE4EC; }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; }
+        .upload-text { font-size: 14px; color: #FF6B9D; font-weight: 600; }
+        .upload-hint { font-size: 12px; color: #999; margin-top: 4px; }
+        .sheet-viewer {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: center; justify-content: center; z-index: 300;
+        }
+        .sheet-viewer.active { display: flex; }
+        .sheet-viewer img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            touch-action: none; transition: transform 0.1s;
+        }
+        .sheet-viewer-close {
+            position: absolute; top: 20px; right: 20px; width: 40px; height: 40px;
+            background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%;
+            font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            z-index: 301;
         }
         .toast {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: #fff; padding: 14px 24px; border-radius: 12px;
-            font-size: 14px; z-index: 999; max-width: 80%; text-align: center; line-height: 1.5; display: none;
+            position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px;
+            font-size: 14px; z-index: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none;
         }
-        .toast.show { display: block; animation: toastIn 0.3s ease; }
-        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+        .toast.show { opacity: 1; }
+        .hidden-input { display: none; }
     </style>
 </head>
 <body>
     <div class="top-nav">
-        <button class="nav-btn" onclick="closePage()">✕</button>
-        <div class="nav-title">小菠萝的音乐课堂 🎵</div>
-        <button class="nav-btn" onclick="sharePage()">↗</button>
+        <button class="nav-btn">🎵</button>
+        <div class="nav-title">小菠萝的音乐课堂<span class="cloud-badge" id="cloudBadge" title="点击查看连接状态" onclick="showConnectionInfo()">☁️ 云端同步</span></div>
+        <button class="nav-btn">🍍</button>
     </div>
+
     <div class="header-banner">
-        <div class="music-note note-1">🎵</div>
-        <div class="music-note note-2">🎵</div>
-        <div class="music-note note-3">🎶</div>
-        <div class="avatar-circle"><span class="avatar-placeholder">🍍</span></div>
+        <div class="music-note note-1">♪</div>
+        <div class="music-note note-2">♫</div>
+        <div class="music-note note-3">♪</div>
+        <div class="avatar-circle"><img src="https://aka.doubaocdn.com/s/WmZfQLnIpG" alt="小菠萝" style="width:100%;height:100%;object-fit:cover;"></div>
         <div class="banner-title">小菠萝的音乐课堂</div>
-        <div class="banner-subtitle"><span>🎵</span><span>记录每一次成长，珍藏每一段旋律</span><span>🎵</span></div>
+        <div class="banner-subtitle">🎵记录每一次成长，珍藏每一段旋律🎵</div>
     </div>
+
     <div class="tab-nav">
-        <div class="tab-item active" data-tab="lessons" onclick="switchTab('lessons')"><span class="tab-icon">📝</span><span class="tab-label">课程记录</span></div>
-        <div class="tab-item" data-tab="sheets" onclick="switchTab('sheets')"><span class="tab-icon">🎼</span><span class="tab-label">谱子图片</span></div>
-        <div class="tab-item" data-tab="videos" onclick="switchTab('videos')"><span class="tab-icon">🎬</span><span class="tab-label">伴奏视频</span></div>
-        <div class="tab-item" data-tab="audios" onclick="switchTab('audios')"><span class="tab-icon">🎧</span><span class="tab-label">伴奏音频</span></div>
+        <div class="tab-item active" onclick="switchTab('lessons')">
+            <span class="tab-icon">📝</span>
+            <span class="tab-label">课程记录</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('sheets')">
+            <span class="tab-icon">🎼</span>
+            <span class="tab-label">谱子图片</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('videos')">
+            <span class="tab-icon">🎬</span>
+            <span class="tab-label">伴奏视频</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('audios')">
+            <span class="tab-icon">🎧</span>
+            <span class="tab-label">伴奏音频</span>
+        </div>
     </div>
-    <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="搜索课程记录..." oninput="doSearch()">
-    </div>
+
     <div class="content-area">
-        <div class="tab-content active" id="content-lessons">
+        <div class="tab-content active" id="tab-lessons">
             <div class="stats-inline">
-                <span>📚 累计课时：<span class="num" id="statLessonsInline">0</span> 节</span>
+                <span>📚 累计课时：<span class="num" id="totalLessons">0</span> 节</span>
                 <div class="io-buttons">
                     <button class="io-btn io-btn-export" onclick="exportLessons()">📤 导出</button>
                     <button class="io-btn io-btn-import" onclick="document.getElementById('importFile').click()">📥 导入</button>
                 </div>
             </div>
-            <input type="file" id="importFile" accept=".csv,.txt" style="display:none" onchange="importLessons(this)">
-            <div id="lessonList">
-                <div class="empty-state">
-                    <div class="empty-icon">📖</div>
-                    <div class="empty-text">还没有课程记录，快去添加第一条吧～</div>
-                </div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="lessonSearch" placeholder="搜索课程记录..." oninput="renderLessons()">
             </div>
+            <div id="lessonList"></div>
         </div>
-        <div class="tab-content" id="content-sheets">
-            <div id="sheetList" class="sheet-grid">
-                <div class="empty-state" style="grid-column:1/-1;">
-                    <div class="empty-icon">🎼</div>
-                    <div class="empty-text">还没有谱子图片，快去添加第一张吧～</div>
-                </div>
+
+        <div class="tab-content" id="tab-sheets">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="sheetSearch" placeholder="搜索谱子..." oninput="renderSheets()">
             </div>
+            <div class="sheet-grid" id="sheetList"></div>
         </div>
-        <div class="tab-content" id="content-videos">
-            <div id="videoList">
-                <div class="empty-state">
-                    <div class="empty-icon">🎬</div>
-                    <div class="empty-text">还没有伴奏视频，快去添加第一个吧～</div>
-                </div>
+
+        <div class="tab-content" id="tab-videos">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="videoSearch" placeholder="搜索视频..." oninput="renderVideos()">
             </div>
+            <div id="videoList"></div>
         </div>
-        <div class="tab-content" id="content-audios">
-            <div id="audioList">
-                <div class="empty-state">
-                    <div class="empty-icon">🎧</div>
-                    <div class="empty-text">还没有伴奏音频，快去添加第一个吧～</div>
-                </div>
+
+        <div class="tab-content" id="tab-audios">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="audioSearch" placeholder="搜索音频..." oninput="renderAudios()">
             </div>
+            <div id="audioList"></div>
         </div>
     </div>
-    <div class="footer-encourage">
-        <div class="footer-pineapple">🍍</div>
-        <div class="footer-text">小菠萝快乐唱歌，快乐成长</div>
-    </div>
-    <div class="fab" onclick="openAddModal()">📝</div>
-    <div class="modal-overlay" id="modalOverlay">
+
+    <button class="fab" onclick="openAddModal()">+</button>
+
+    <div class="footer">🍍 小菠萝快乐唱歌，快乐成长</div>
+
+    <!-- 新增/编辑弹窗 -->
+    <div class="modal-overlay" id="addModal">
         <div class="modal">
-            <div class="modal-handle"></div>
-            <h3 id="modalTitle">添加课程记录</h3>
-            <div id="modalForm"></div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">取消</button>
-                <button class="btn-submit" id="submitBtn" onclick="submitForm()">保存</button>
+            <button class="modal-close" onclick="closeAddModal()">✕</button>
+            <div class="modal-title" id="modalTitle">新增课程记录</div>
+            <div id="lessonForm">
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="lessonDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">课程标题</label>
+                    <input type="text" class="form-input" id="lessonTitle" placeholder="例如：第3课 - 小星星">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">课程内容</label>
+                    <textarea class="form-textarea" id="lessonContent" placeholder="记录今天学了什么..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">课后作业</label>
+                    <textarea class="form-textarea" id="lessonHomework" placeholder="今天的作业是..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">标签（用逗号分隔）</label>
+                    <input type="text" class="form-input" id="lessonTags" placeholder="例如：声乐,练习曲">
+                </div>
+                <button class="submit-btn" onclick="saveLesson()">保存</button>
+            </div>
+            <div id="sheetForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">谱子名称</label>
+                    <input type="text" class="form-input" id="sheetTitle" placeholder="例如：小星星谱子">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="sheetDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">备注</label>
+                    <textarea class="form-textarea" id="sheetContent" placeholder="谱子备注..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">上传谱子图片</label>
+                    <div class="upload-area" onclick="document.getElementById('sheetFile').click()">
+                        <div class="upload-icon">📷</div>
+                        <div class="upload-text">点击上传谱子图片</div>
+                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                    </div>
+                    <input type="file" id="sheetFile" accept="image/*" class="hidden-input" onchange="previewSheetFile(this)">
+                    <div id="sheetPreview" style="margin-top:10px;text-align:center;"></div>
+                </div>
+                <button class="submit-btn" onclick="saveSheet()">保存</button>
+            </div>
+            <div id="videoForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">视频名称</label>
+                    <input type="text" class="form-input" id="videoTitle" placeholder="例如：小星星伴奏视频">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">描述</label>
+                    <textarea class="form-textarea" id="videoDesc" placeholder="视频描述..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">上传视频</label>
+                    <div class="upload-area" onclick="document.getElementById('videoFile').click()">
+                        <div class="upload-icon">🎬</div>
+                        <div class="upload-text">点击上传伴奏视频</div>
+                        <div class="upload-hint">支持 MP4、MOV 格式</div>
+                    </div>
+                    <input type="file" id="videoFile" accept="video/*" class="hidden-input" onchange="previewVideoFile(this)">
+                    <div id="videoPreview" style="margin-top:10px;"></div>
+                </div>
+                <button class="submit-btn" onclick="saveVideo()">保存</button>
+            </div>
+            <div id="audioForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">音频名称</label>
+                    <input type="text" class="form-input" id="audioTitle" placeholder="例如：小星星伴奏音频">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">描述</label>
+                    <textarea class="form-textarea" id="audioDesc" placeholder="音频描述..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">上传音频</label>
+                    <div class="upload-area" onclick="document.getElementById('audioFile').click()">
+                        <div class="upload-icon">🎧</div>
+                        <div class="upload-text">点击上传伴奏音频</div>
+                        <div class="upload-hint">支持 MP3、WAV、M4A 格式</div>
+                    </div>
+                    <input type="file" id="audioFile" accept="audio/*" class="hidden-input" onchange="previewAudioFile(this)">
+                    <div id="audioPreview" style="margin-top:10px;"></div>
+                </div>
+                <button class="submit-btn" onclick="saveAudio()">保存</button>
             </div>
         </div>
     </div>
-    <div class="player-overlay" id="playerOverlay">
-        <div class="player-box">
-            <button class="player-close" onclick="closePlayer()">✕</button>
-            <div id="playerContent"></div>
-            <div class="player-title" id="playerTitle"></div>
-        </div>
+
+    <!-- 谱子查看器 -->
+    <div class="sheet-viewer" id="sheetViewer">
+        <button class="sheet-viewer-close" onclick="closeSheetViewer()">✕</button>
+        <img id="sheetViewerImg" src="" alt="谱子">
     </div>
-    <div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
-        <div class="detail-box" id="detailBox"></div>
-    </div>
+
+    <!-- 导入文件 -->
+    <input type="file" id="importFile" accept=".csv,.txt" class="hidden-input" onchange="importLessons(this)">
+
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        const STORAGE_KEY = 'xiaoboluo_music_data';
-        const DB_NAME = 'xiaoboluo_music_files';
-        const DB_VERSION = 1;
-        let db = null;
+        // Supabase 配置
+        const SUPABASE_URL = 'https://ixldmkdcnhejmtjpgawm.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ntl8P9fwJxo3QAf_EkqAnQ_nD8KJEkq';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onupgradeneeded = (e) => {
-                    const database = e.target.result;
-                    if (!database.objectStoreNames.contains('files')) {
-                        database.createObjectStore('files', { keyPath: 'id' });
-                    }
-                };
-                request.onsuccess = (e) => { db = e.target.result; resolve(db); };
-                request.onerror = (e) => reject(e);
-            });
-        }
-
-        function saveFileToDB(id, blob, name, type) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('files', 'readwrite');
-                tx.objectStore('files').put({ id, blob, name, type, size: blob.size });
-                tx.oncomplete = () => resolve();
-                tx.onerror = (e) => reject(e);
-            });
-        }
-
-        function getFileFromDB(id) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('files', 'readonly');
-                const request = tx.objectStore('files').get(id);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (e) => reject(e);
-            });
-        }
-
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function generateThumbnail(file, maxWidth = 400) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const scale = Math.min(1, maxWidth / img.width);
-                        canvas.width = img.width * scale;
-                        canvas.height = img.height * scale;
-                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.onerror = reject;
-                    img.src = e.target.result;
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function migrateOldData() {
-            const oldKeys = ['xiaoboluo_music_v2', 'xiaoboluo_music_v3', 'xiaoboluo_music'];
-            let migrated = false;
-            for (const key of oldKeys) {
-                try {
-                    const old = localStorage.getItem(key);
-                    if (old && !localStorage.getItem(STORAGE_KEY)) {
-                        localStorage.setItem(STORAGE_KEY, old);
-                        migrated = true;
-                    }
-                } catch(e) {}
-            }
-            return migrated;
-        }
-
-        let data = { lessons: [], sheets: [], videos: [], audios: [] };
+        // 数据
+        let lessons = [];
+        let sheets = [];
+        let videos = [];
+        let audios = [];
         let currentTab = 'lessons';
-        let pendingFile = null;
-        let editingIndex = -1;
+        let editingId = null;
+        let dataLoaded = false;
+        let selectedSheetFile = null;
+        let selectedVideoFile = null;
+        let selectedAudioFile = null;
 
-        function showToast(msg, duration = 2500) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), duration);
-        }
+        // 谱子缩放
+        let scale = 1;
+        let lastTouchDist = 0;
 
-        function loadData() {
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('lessonDate').value = today;
+            document.getElementById('sheetDate').value = today;
+            loadAllData();
+        });
+
+        async function loadAllData() {
+            // 显示加载状态
+            document.getElementById('lessonList').innerHTML = '<div class="loading-state"><div class="loading-spinner"></div><div class="empty-text">正在从云端加载数据...</div></div>';
+            
+            // 15秒超时机制
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('连接超时（15秒无响应）。可能原因：1.网络不好 2.Supabase项目还在启动 3.API key不正确')), 15000);
+            });
+            
             try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) data = JSON.parse(saved);
-            } catch(e) { console.error('加载数据失败', e); }
-            updateStats();
-            renderAll();
+                // 测试Supabase连接
+                console.log('正在连接Supabase...', SUPABASE_URL);
+                const { data: testData, error: testError } = await Promise.race([
+                    supabase.from('lessons').select('id').limit(1),
+                    timeoutPromise
+                ]);
+                if (testError) throw testError;
+                console.log('Supabase连接成功！');
+
+                // 加载课程记录（完整数据）
+                const { data: lessonsData, error: lessonsError } = await supabase
+                    .from('lessons')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (lessonsError) throw lessonsError;
+                lessons = lessonsData || [];
+
+                // 加载谱子
+                const { data: sheetsData, error: sheetsError } = await supabase
+                    .from('sheets')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (sheetsError) throw sheetsError;
+                sheets = sheetsData || [];
+
+                // 加载视频
+                const { data: videosData, error: videosError } = await supabase
+                    .from('videos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (videosError) throw videosError;
+                videos = videosData || [];
+
+                // 加载音频
+                const { data: audiosData, error: audiosError } = await supabase
+                    .from('audios')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (audiosError) throw audiosError;
+                audios = audiosData || [];
+
+                dataLoaded = true;
+                renderAll();
+                showToast('云端数据加载成功！');
+            } catch(e) {
+                console.error('加载数据失败', e);
+                const errMsg = e.message || JSON.stringify(e);
+                const errorHtml = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text" style="color:#E65100;font-size:14px;line-height:1.8;">云端数据加载失败<br><br><b>可能原因：</b><br>1. Supabase 数据表还没创建好<br>2. 行级安全(RLS)没关闭<br>3. 网络连接问题<br><br><b>错误信息：</b><br>' + errMsg + '<br><br><b>解决方法：</b><br>回到 Supabase → SQL Editor → 执行完整建表SQL<br><br><button onclick="loadAllData()" style="padding:10px 24px;background:#FF8C69;color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;">🔄 重新加载</button></div></div>';
+                document.getElementById('lessonList').innerHTML = errorHtml;
+                document.getElementById('sheetList').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">⚠️</div><div class="empty-text">加载失败，可切换其他标签页</div></div>';
+                document.getElementById('videoList').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">加载失败，可切换其他标签页</div></div>';
+                document.getElementById('audioList').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">加载失败，可切换其他标签页</div></div>';
+                dataLoaded = true;
+                // 隐藏加载状态
+                const loadingEl = document.querySelector('.loading-state');
+                if (loadingEl) loadingEl.style.display = 'none';
+                showToast('云端加载失败，请看页面提示');
+            }
         }
 
-        function saveData() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch(e) { showToast('保存失败，可能是存储空间不足'); }
-            updateStats();
-        }
-
-        function updateStats() {
-            const el = document.getElementById('statLessonsInline');
-            if (el) el.textContent = data.lessons.length;
+        function showConnectionInfo() {
+            alert('【云端连接信息】\n\nSupabase地址：' + SUPABASE_URL + '\n\n状态：' + (dataLoaded ? '已完成加载' : '加载中/失败') + '\n\n如果一直加载失败，请检查：\n1. Supabase项目是否已完全启动\n2. API key是否正确（Project Settings → API）\n3. 数据表是否已创建\n4. 网络连接是否正常');
         }
 
         function switchTab(tab) {
+            // 即使数据还在加载，也允许切换标签页
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
             currentTab = tab;
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.tab-item[data-tab="${tab}"]`).classList.add('active');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('content-' + tab).classList.add('active');
-            const ph = { lessons: '搜索课程记录...', sheets: '搜索谱子...', videos: '搜索伴奏视频...', audios: '搜索伴奏音频...' };
-            document.getElementById('searchInput').placeholder = ph[tab];
-            document.getElementById('searchInput').value = '';
-            renderAll();
         }
 
-        function renderAll(filter = '') {
-            renderLessons(filter); renderSheets(filter); renderVideos(filter); renderAudios(filter);
+        function renderAll() {
+            renderLessons();
+            renderSheets();
+            renderVideos();
+            renderAudios();
+            document.getElementById('totalLessons').textContent = lessons.length;
         }
 
-        function formatSize(bytes) {
-            if (bytes < 1024) return bytes + 'B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + 'KB';
-            return (bytes / 1024 / 1024).toFixed(1) + 'MB';
-        }
-
-        function renderLessons(filter) {
-            const list = document.getElementById('lessonList');
-            let items = data.lessons;
-            if (filter) items = items.filter(i => (i.title&&i.title.includes(filter))||(i.content&&i.content.includes(filter))||(i.homework&&i.homework.includes(filter))||(i.tags&&i.tags.includes(filter)));
-            if (items.length === 0) {
-                list.innerHTML = `<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">${filter?'没有找到相关记录':'还没有课程记录，快去添加第一条吧～'}</div></div>`;
+        function renderLessons() {
+            const search = document.getElementById('lessonSearch').value.toLowerCase();
+            const filtered = lessons.filter(l => 
+                (l.title && l.title.toLowerCase().includes(search)) ||
+                (l.content && l.content.toLowerCase().includes(search)) ||
+                (l.date && l.date.includes(search))
+            );
+            if (filtered.length === 0) {
+                document.getElementById('lessonList').innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">还没有课程记录，快去添加第一条吧～</div></div>';
                 return;
             }
-            list.innerHTML = items.map(item => {
-                const idx = data.lessons.indexOf(item);
-                return `<div class="list-item" onclick="viewLesson(${idx})">
-                    <div class="item-header"><div class="item-title">${item.title||'未命名课程'}</div><div class="item-date">${item.date||''}</div></div>
-                    <div class="item-desc">${(item.content||'').substring(0,80)}${(item.content||'').length>80?'...':''}</div>
-                    ${item.homework?`<div class="item-homework"><div class="hw-label">📌 课后作业</div>${item.homework.substring(0,60)}${item.homework.length>60?'...':''}</div>`:''}
-                    ${item.tags?`<div class="item-tags">${item.tags.split(/[,，]/).filter(t=>t.trim()).map(t=>`<span class="item-tag">${t.trim()}</span>`).join('')}</div>`:''}
-                </div>`;
-            }).join('');
-        }
-
-        function viewLesson(index) {
-            const item = data.lessons[index];
-            document.getElementById('detailBox').innerHTML = `
-                <h3>📝 ${item.title||'课程详情'}</h3>
-                <div class="detail-row"><div class="dt-label">📅 上课日期</div><div class="dt-content">${item.date||'未设置'}</div></div>
-                <div class="detail-row"><div class="dt-label">📋 课程内容 / 老师点评</div><div class="dt-content">${item.content||'无'}</div></div>
-                ${item.homework?`<div class="detail-row"><div class="dt-label">📌 课后作业</div><div class="detail-homework"><div class="dt-content">${item.homework}</div></div></div>`:''}
-                ${item.tags?`<div class="detail-row"><div class="dt-label">🏷️ 标签</div><div class="dt-content">${item.tags}</div></div>`:''}
-                <div class="detail-actions">
-                    <button class="btn-edit" onclick="editLesson(${index})">✏️ 编辑</button>
-                    <button class="btn-delete" onclick="deleteLesson(${index})">🗑️ 删除</button>
+            document.getElementById('lessonList').innerHTML = filtered.map(l => `
+                <div class="lesson-card">
+                    <div class="card-actions">
+                        <button class="card-action-btn" onclick="editLesson('${l.id}')">✏️</button>
+                        <button class="card-action-btn" onclick="deleteLesson('${l.id}')">🗑️</button>
+                    </div>
+                    <div class="lesson-date">${l.date || ''}</div>
+                    <div class="lesson-title">${l.title || ''}</div>
+                    <div class="lesson-content">${l.content || ''}</div>
+                    ${l.homework ? `<div class="lesson-homework"><div class="homework-label">📌 课后作业</div><div class="homework-text">${l.homework}</div></div>` : ''}
+                    ${l.tags ? `<div class="lesson-tags">${l.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
                 </div>
-                <button class="btn-ok" style="width:100%;padding:12px;margin-top:10px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;" onclick="closeDetail()">知道啦</button>`;
-            document.getElementById('detailOverlay').classList.add('show');
+            `).join('');
         }
 
-        function editLesson(index) {
-            editingIndex = index;
-            closeDetail();
-            setTimeout(() => {
-                openAddModal();
-                const item = data.lessons[index];
-                document.getElementById('modalTitle').textContent = '✏️ 编辑课程记录';
-                document.getElementById('f_date').value = item.date || '';
-                document.getElementById('f_title').value = item.title || '';
-                document.getElementById('f_content').value = item.content || '';
-                document.getElementById('f_homework').value = item.homework || '';
-                document.getElementById('f_tags').value = item.tags || '';
-            }, 200);
-        }
-
-        function deleteLesson(index) {
-            const item = data.lessons[index];
-            if (confirm(`确定要删除「${item.title || '这条记录'}」吗？删除后无法恢复。`)) {
-                data.lessons.splice(index, 1);
-                saveData();
-                renderAll();
-                closeDetail();
-                showToast('已删除');
+        function renderSheets() {
+            const search = document.getElementById('sheetSearch').value.toLowerCase();
+            const filtered = sheets.filter(s => 
+                (s.title && s.title.toLowerCase().includes(search)) ||
+                (s.date && s.date.includes(search))
+            );
+            if (filtered.length === 0) {
+                document.getElementById('sheetList').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🎼</div><div class="empty-text">还没有谱子，快去上传第一张吧～</div></div>';
+                return;
             }
+            document.getElementById('sheetList').innerHTML = filtered.map(s => {
+                const imgUrl = s.file_path ? `${SUPABASE_URL}/storage/v1/object/public/media/${s.file_path}` : '';
+                return `
+                <div class="sheet-card">
+                    <button class="sheet-delete" onclick="deleteSheet('${s.id}')">✕</button>
+                    <img class="sheet-thumb" src="${imgUrl}" alt="${s.title}" onclick="openSheetViewer('${imgUrl}')">
+                    <div class="sheet-info">
+                        <div class="sheet-title">${s.title || ''}</div>
+                        <div class="sheet-date">${s.date || ''}</div>
+                    </div>
+                </div>
+            `}).join('');
         }
 
-        function exportLessons() {
-            if (data.lessons.length === 0) { showToast('还没有课程记录可以导出'); return; }
-            const headers = ['日期', '课程标题', '课程内容/老师点评', '课后作业', '标签'];
-            function esc(val) {
-                const s = (val == null ? '' : String(val));
-                if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
-                    return '"' + s.replace(/"/g, '""') + '"';
+        function renderVideos() {
+            const search = document.getElementById('videoSearch').value.toLowerCase();
+            const filtered = videos.filter(v => 
+                (v.title && v.title.toLowerCase().includes(search)) ||
+                (v.description && v.description.toLowerCase().includes(search))
+            );
+            if (filtered.length === 0) {
+                document.getElementById('videoList').innerHTML = '<div class="empty-state"><div class="empty-icon">🎬</div><div class="empty-text">还没有视频，快去上传第一个吧～</div></div>';
+                return;
+            }
+            document.getElementById('videoList').innerHTML = filtered.map(v => {
+                const videoUrl = v.file_path ? `${SUPABASE_URL}/storage/v1/object/public/media/${v.file_path}` : '';
+                return `
+                <div class="media-card">
+                    <div class="media-title">${v.title || ''}</div>
+                    ${v.description ? `<div class="media-desc">${v.description}</div>` : ''}
+                    <video src="${videoUrl}" controls preload="metadata"></video>
+                    <div class="media-actions">
+                        <button class="delete-btn" onclick="deleteVideo('${v.id}')">🗑️ 删除</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function renderAudios() {
+            const search = document.getElementById('audioSearch').value.toLowerCase();
+            const filtered = audios.filter(a => 
+                (a.title && a.title.toLowerCase().includes(search)) ||
+                (a.description && a.description.toLowerCase().includes(search))
+            );
+            if (filtered.length === 0) {
+                document.getElementById('audioList').innerHTML = '<div class="empty-state"><div class="empty-icon">🎧</div><div class="empty-text">还没有音频，快去上传第一个吧～</div></div>';
+                return;
+            }
+            document.getElementById('audioList').innerHTML = filtered.map(a => {
+                const audioUrl = a.file_path ? `${SUPABASE_URL}/storage/v1/object/public/media/${a.file_path}` : '';
+                return `
+                <div class="media-card">
+                    <div class="media-title">${a.title || ''}</div>
+                    ${a.description ? `<div class="media-desc">${a.description}</div>` : ''}
+                    <audio src="${audioUrl}" controls preload="metadata"></audio>
+                    <div class="media-actions">
+                        <button class="delete-btn" onclick="deleteAudio('${a.id}')">🗑️ 删除</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '新增' + getCurrentTabName();
+            hideAllForms();
+            showCurrentForm();
+            clearForm();
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function getCurrentTabName() {
+            const names = { lessons: '课程记录', sheets: '谱子图片', videos: '伴奏视频', audios: '伴奏音频' };
+            return names[currentTab];
+        }
+
+        function hideAllForms() {
+            document.getElementById('lessonForm').style.display = 'none';
+            document.getElementById('sheetForm').style.display = 'none';
+            document.getElementById('videoForm').style.display = 'none';
+            document.getElementById('audioForm').style.display = 'none';
+        }
+
+        function showCurrentForm() {
+            document.getElementById(currentTab + 'Form').style.display = 'block';
+        }
+
+        function clearForm() {
+            document.getElementById('lessonTitle').value = '';
+            document.getElementById('lessonContent').value = '';
+            document.getElementById('lessonHomework').value = '';
+            document.getElementById('lessonTags').value = '';
+            document.getElementById('sheetTitle').value = '';
+            document.getElementById('sheetContent').value = '';
+            document.getElementById('videoTitle').value = '';
+            document.getElementById('videoDesc').value = '';
+            document.getElementById('audioTitle').value = '';
+            document.getElementById('audioDesc').value = '';
+            document.getElementById('sheetPreview').innerHTML = '';
+            document.getElementById('videoPreview').innerHTML = '';
+            document.getElementById('audioPreview').innerHTML = '';
+            selectedSheetFile = null;
+            selectedVideoFile = null;
+            selectedAudioFile = null;
+            document.getElementById('sheetFile').value = '';
+            document.getElementById('videoFile').value = '';
+            document.getElementById('audioFile').value = '';
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+        }
+
+        // 课程记录
+        async function saveLesson() {
+            const date = document.getElementById('lessonDate').value;
+            const title = document.getElementById('lessonTitle').value;
+            const content = document.getElementById('lessonContent').value;
+            const homework = document.getElementById('lessonHomework').value;
+            const tags = document.getElementById('lessonTags').value;
+
+            if (!title) { showToast('请填写课程标题'); return; }
+
+            try {
+                if (editingId) {
+                    const { error } = await supabase.from('lessons').update({
+                        date, title, content, homework, tags
+                    }).eq('id', editingId);
+                    if (error) throw error;
+                    showToast('修改成功！');
+                } else {
+                    const { error } = await supabase.from('lessons').insert({
+                        date, title, content, homework, tags
+                    });
+                    if (error) throw error;
+                    showToast('添加成功！');
                 }
-                return s;
+                closeAddModal();
+                await loadAllData();
+            } catch(e) {
+                showToast('保存失败：' + e.message);
             }
-            const rows = [headers.join(',')];
-            data.lessons.forEach(item => {
-                rows.push([esc(item.date), esc(item.title), esc(item.content), esc(item.homework), esc(item.tags)].join(','));
-            });
-            const csvContent = '\uFEFF' + rows.join('\r\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        }
+
+        function editLesson(id) {
+            const lesson = lessons.find(l => l.id === id);
+            if (!lesson) return;
+            editingId = id;
+            document.getElementById('modalTitle').textContent = '编辑课程记录';
+            hideAllForms();
+            document.getElementById('lessonForm').style.display = 'block';
+            document.getElementById('lessonDate').value = lesson.date || '';
+            document.getElementById('lessonTitle').value = lesson.title || '';
+            document.getElementById('lessonContent').value = lesson.content || '';
+            document.getElementById('lessonHomework').value = lesson.homework || '';
+            document.getElementById('lessonTags').value = lesson.tags || '';
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        async function deleteLesson(id) {
+            if (!confirm('确定要删除这条课程记录吗？')) return;
+            try {
+                const { error } = await supabase.from('lessons').delete().eq('id', id);
+                if (error) throw error;
+                showToast('删除成功！');
+                await loadAllData();
+            } catch(e) {
+                showToast('删除失败：' + e.message);
+            }
+        }
+
+        // 谱子
+        function previewSheetFile(input) {
+            if (input.files && input.files[0]) {
+                selectedSheetFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('sheetPreview').innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:150px;border-radius:8px;">`;
+                };
+                reader.readAsDataURL(selectedSheetFile);
+            }
+        }
+
+        async function saveSheet() {
+            const title = document.getElementById('sheetTitle').value;
+            const date = document.getElementById('sheetDate').value;
+            const content = document.getElementById('sheetContent').value;
+
+            if (!title) { showToast('请填写谱子名称'); return; }
+            if (!selectedSheetFile && !editingId) { showToast('请选择谱子图片'); return; }
+
+            try {
+                let file_path = null;
+                if (selectedSheetFile) {
+                    const ext = selectedSheetFile.name.split('.').pop();
+                    const fileName = `sheets/${Date.now()}.${ext}`;
+                    const { error: uploadError } = await supabase.storage.from('media').upload(fileName, selectedSheetFile);
+                    if (uploadError) throw uploadError;
+                    file_path = fileName;
+                }
+
+                if (editingId) {
+                    const updateData = { title, date, content };
+                    if (file_path) updateData.file_path = file_path;
+                    const { error } = await supabase.from('sheets').update(updateData).eq('id', editingId);
+                    if (error) throw error;
+                    showToast('修改成功！');
+                } else {
+                    const { error } = await supabase.from('sheets').insert({ title, date, content, file_path });
+                    if (error) throw error;
+                    showToast('上传成功！');
+                }
+                closeAddModal();
+                await loadAllData();
+            } catch(e) {
+                showToast('保存失败：' + e.message);
+            }
+        }
+
+        async function deleteSheet(id) {
+            if (!confirm('确定要删除这张谱子吗？')) return;
+            try {
+                const sheet = sheets.find(s => s.id === id);
+                if (sheet && sheet.file_path) {
+                    await supabase.storage.from('media').remove([sheet.file_path]);
+                }
+                const { error } = await supabase.from('sheets').delete().eq('id', id);
+                if (error) throw error;
+                showToast('删除成功！');
+                await loadAllData();
+            } catch(e) {
+                showToast('删除失败：' + e.message);
+            }
+        }
+
+        // 视频
+        function previewVideoFile(input) {
+            if (input.files && input.files[0]) {
+                selectedVideoFile = input.files[0];
+                const url = URL.createObjectURL(selectedVideoFile);
+                document.getElementById('videoPreview').innerHTML = `<video src="${url}" controls style="width:100%;border-radius:8px;max-height:150px;"></video>`;
+            }
+        }
+
+        async function saveVideo() {
+            const title = document.getElementById('videoTitle').value;
+            const description = document.getElementById('videoDesc').value;
+
+            if (!title) { showToast('请填写视频名称'); return; }
+            if (!selectedVideoFile && !editingId) { showToast('请选择视频文件'); return; }
+
+            try {
+                let file_path = null;
+                if (selectedVideoFile) {
+                    const ext = selectedVideoFile.name.split('.').pop();
+                    const fileName = `videos/${Date.now()}.${ext}`;
+                    const { error: uploadError } = await supabase.storage.from('media').upload(fileName, selectedVideoFile);
+                    if (uploadError) throw uploadError;
+                    file_path = fileName;
+                }
+
+                if (editingId) {
+                    const updateData = { title, description };
+                    if (file_path) updateData.file_path = file_path;
+                    const { error } = await supabase.from('videos').update(updateData).eq('id', editingId);
+                    if (error) throw error;
+                    showToast('修改成功！');
+                } else {
+                    const { error } = await supabase.from('videos').insert({ title, description, file_path, file_name: selectedVideoFile ? selectedVideoFile.name : null });
+                    if (error) throw error;
+                    showToast('上传成功！');
+                }
+                closeAddModal();
+                await loadAllData();
+            } catch(e) {
+                showToast('保存失败：' + e.message);
+            }
+        }
+
+        async function deleteVideo(id) {
+            if (!confirm('确定要删除这个视频吗？')) return;
+            try {
+                const video = videos.find(v => v.id === id);
+                if (video && video.file_path) {
+                    await supabase.storage.from('media').remove([video.file_path]);
+                }
+                const { error } = await supabase.from('videos').delete().eq('id', id);
+                if (error) throw error;
+                showToast('删除成功！');
+                await loadAllData();
+            } catch(e) {
+                showToast('删除失败：' + e.message);
+            }
+        }
+
+        // 音频
+        function previewAudioFile(input) {
+            if (input.files && input.files[0]) {
+                selectedAudioFile = input.files[0];
+                const url = URL.createObjectURL(selectedAudioFile);
+                document.getElementById('audioPreview').innerHTML = `<audio src="${url}" controls style="width:100%;"></audio>`;
+            }
+        }
+
+        async function saveAudio() {
+            const title = document.getElementById('audioTitle').value;
+            const description = document.getElementById('audioDesc').value;
+
+            if (!title) { showToast('请填写音频名称'); return; }
+            if (!selectedAudioFile && !editingId) { showToast('请选择音频文件'); return; }
+
+            try {
+                let file_path = null;
+                if (selectedAudioFile) {
+                    const ext = selectedAudioFile.name.split('.').pop();
+                    const fileName = `audios/${Date.now()}.${ext}`;
+                    const { error: uploadError } = await supabase.storage.from('media').upload(fileName, selectedAudioFile);
+                    if (uploadError) throw uploadError;
+                    file_path = fileName;
+                }
+
+                if (editingId) {
+                    const updateData = { title, description };
+                    if (file_path) updateData.file_path = file_path;
+                    const { error } = await supabase.from('audios').update(updateData).eq('id', editingId);
+                    if (error) throw error;
+                    showToast('修改成功！');
+                } else {
+                    const { error } = await supabase.from('audios').insert({ title, description, file_path, file_name: selectedAudioFile ? selectedAudioFile.name : null });
+                    if (error) throw error;
+                    showToast('上传成功！');
+                }
+                closeAddModal();
+                await loadAllData();
+            } catch(e) {
+                showToast('保存失败：' + e.message);
+            }
+        }
+
+        async function deleteAudio(id) {
+            if (!confirm('确定要删除这个音频吗？')) return;
+            try {
+                const audio = audios.find(a => a.id === id);
+                if (audio && audio.file_path) {
+                    await supabase.storage.from('media').remove([audio.file_path]);
+                }
+                const { error } = await supabase.from('audios').delete().eq('id', id);
+                if (error) throw error;
+                showToast('删除成功！');
+                await loadAllData();
+            } catch(e) {
+                showToast('删除失败：' + e.message);
+            }
+        }
+
+        // 谱子查看器
+        function openSheetViewer(url) {
+            document.getElementById('sheetViewerImg').src = url;
+            document.getElementById('sheetViewer').classList.add('active');
+            scale = 1;
+            document.getElementById('sheetViewerImg').style.transform = 'scale(1)';
+        }
+
+        function closeSheetViewer() {
+            document.getElementById('sheetViewer').classList.remove('active');
+        }
+
+        // 双指缩放
+        document.getElementById('sheetViewerImg').addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                lastTouchDist = getTouchDist(e);
+            }
+        });
+
+        document.getElementById('sheetViewerImg').addEventListener('touchmove', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = getTouchDist(e);
+                const ratio = dist / lastTouchDist;
+                scale = Math.max(0.5, Math.min(5, scale * ratio));
+                this.style.transform = `scale(${scale})`;
+                lastTouchDist = dist;
+            }
+        }, { passive: false });
+
+        // 双击放大/还原
+        document.getElementById('sheetViewerImg').addEventListener('dblclick', function() {
+            if (scale > 1) {
+                scale = 1;
+            } else {
+                scale = 2;
+            }
+            this.style.transform = `scale(${scale})`;
+        });
+
+        function getTouchDist(e) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // 导入导出
+        function exportLessons() {
+            if (lessons.length === 0) { showToast('没有数据可导出'); return; }
+            const headers = ['日期', '课程标题', '课程内容', '课后作业', '标签'];
+            const rows = lessons.map(l => [l.date || '', l.title || '', l.content || '', l.homework || '', l.tags || '']);
+            const csv = [headers, ...rows].map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const today = new Date().toISOString().split('T')[0];
             const a = document.createElement('a');
             a.href = url;
-            a.download = `小菠萝课程记录_${today}.csv`;
-            document.body.appendChild(a);
+            a.download = `课程记录_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast(`已导出 ${data.lessons.length} 条课程记录 📤`);
+            showToast('导出成功！');
         }
 
-        function importLessons(input) {
+        async function importLessons(input) {
+            if (!input.files || !input.files[0]) return;
             const file = input.files[0];
-            if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
-                    let text = e.target.result;
-                    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
-                    const records = parseCSV(text);
-                    if (records.length === 0) { showToast('文件里没有找到课程记录'); input.value = ''; return; }
-                    let startIdx = 0;
-                    const firstRow = records[0].map(c => c.trim());
-                    if (firstRow.includes('日期') || firstRow.includes('课程标题') || firstRow.includes('标题')) {
-                        startIdx = 1;
-                    }
-                    let imported = 0;
-                    for (let i = startIdx; i < records.length; i++) {
-                        const row = records[i];
-                        if (row.every(c => !c || !c.trim())) continue;
-                        const item = {
-                            id: Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + i,
-                            date: (row[0] || '').trim(),
-                            title: (row[1] || '').trim(),
-                            content: (row[2] || '').trim(),
-                            homework: (row[3] || '').trim(),
-                            tags: (row[4] || '').trim()
+                    const text = e.target.result;
+                    const lines = text.split(/\r?\n/).filter(line => line.trim());
+                    if (lines.length < 2) { showToast('文件格式不正确'); return; }
+                    
+                    // 解析CSV（支持引号）
+                    const parseCSV = (line) => {
+                        const result = [];
+                        let current = '';
+                        let inQuotes = false;
+                        for (let i = 0; i < line.length; i++) {
+                            const char = line[i];
+                            if (char === '"') {
+                                if (inQuotes && line[i + 1] === '"') {
+                                    current += '"';
+                                    i++;
+                                } else {
+                                    inQuotes = !inQuotes;
+                                }
+                            } else if (char === ',' && !inQuotes) {
+                                result.push(current);
+                                current = '';
+                            } else {
+                                current += char;
+                            }
+                        }
+                        result.push(current);
+                        return result;
+                    };
+
+                    const headers = parseCSV(lines[0]);
+                    const imported = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const cells = parseCSV(lines[i]);
+                        const record = {
+                            date: cells[0] || '',
+                            title: cells[1] || '',
+                            content: cells[2] || '',
+                            homework: cells[3] || '',
+                            tags: cells[4] || ''
                         };
-                        if (!item.title) item.title = `课程记录 ${data.lessons.length + 1}`;
-                        if (!item.date) item.date = new Date().toISOString().split('T')[0];
-                        data.lessons.unshift(item);
-                        imported++;
+                        // 空字段也允许导入
+                        imported.push(record);
                     }
-                    if (imported > 0) {
-                        saveData();
-                        renderAll();
-                        showToast(`成功导入 ${imported} 条课程记录 📥`);
-                    } else {
-                        showToast('没有可导入的有效记录');
-                    }
-                } catch(err) {
-                    console.error('导入失败', err);
-                    showToast('导入失败，请检查文件格式');
+
+                    if (imported.length === 0) { showToast('没有可导入的数据'); return; }
+
+                    // 批量插入
+                    const { error } = await supabase.from('lessons').insert(imported);
+                    if (error) throw error;
+
+                    showToast(`成功导入 ${imported.length} 条记录！`);
+                    await loadAllData();
+                } catch(e) {
+                    showToast('导入失败：' + e.message);
                 }
                 input.value = '';
             };
-            reader.onerror = function() { showToast('文件读取失败'); input.value = ''; };
             reader.readAsText(file, 'UTF-8');
         }
 
-        function parseCSV(text) {
-            const rows = [];
-            let curRow = [];
-            let curField = '';
-            let inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                const c = text[i];
-                if (inQuotes) {
-                    if (c === '"') {
-                        if (text[i + 1] === '"') { curField += '"'; i++; }
-                        else { inQuotes = false; }
-                    } else { curField += c; }
-                } else {
-                    if (c === '"') { inQuotes = true; }
-                    else if (c === ',') { curRow.push(curField); curField = ''; }
-                    else if (c === '\n') { curRow.push(curField); rows.push(curRow); curRow = []; curField = ''; }
-                    else if (c === '\r') { }
-                    else { curField += c; }
-                }
-            }
-            if (curField !== '' || curRow.length > 0) { curRow.push(curField); rows.push(curRow); }
-            return rows;
+        // Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
         }
-
-        async function viewSheet(index) {
-            const item = data.sheets[index];
-            let imgUrl = null;
-            if (item.fileId) {
-                try {
-                    const file = await getFileFromDB(item.fileId);
-                    if (file && file.blob) imgUrl = URL.createObjectURL(file.blob);
-                } catch(e) { console.error(e); }
-            }
-            if (!imgUrl && item.thumbnail && item.thumbnail.startsWith('data:image')) imgUrl = item.thumbnail;
-            if (!imgUrl && item.url) imgUrl = item.url;
-            if (imgUrl) {
-                const html = `<div class="zoom-viewer" id="zoomViewer"><img src="${imgUrl}" alt="" id="zoomImg"><div class="zoom-hint">👆 双指缩放查看细节</div></div>`;
-                showPlayer(item.title, html);
-                setTimeout(() => initZoomViewer(), 100);
-                return;
-            }
-            showToast('无法打开该谱子');
-        }
-
-        function initZoomViewer() {
-            const viewer = document.getElementById('zoomViewer');
-            const img = document.getElementById('zoomImg');
-            if (!viewer || !img) return;
-            let scale = 1, lastScale = 1, translateX = 0, translateY = 0;
-            let startX = 0, startY = 0, lastDist = 0, isDragging = false, isPinching = false, lastTapTime = 0;
-            function applyTransform() { img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`; }
-            function resetZoom() { scale = 1; lastScale = 1; translateX = 0; translateY = 0; applyTransform(); }
-            viewer.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 2) {
-                    isPinching = true; isDragging = false;
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    lastDist = Math.sqrt(dx * dx + dy * dy);
-                    lastScale = scale;
-                } else if (e.touches.length === 1) {
-                    isDragging = true;
-                    startX = e.touches[0].clientX - translateX;
-                    startY = e.touches[0].clientY - translateY;
-                    const now = Date.now();
-                    if (now - lastTapTime < 300) {
-                        if (scale > 1) resetZoom();
-                        else { scale = 2; lastScale = 2; applyTransform(); }
-                    }
-                    lastTapTime = now;
-                }
-            }, { passive: false });
-            viewer.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                if (isPinching && e.touches.length === 2) {
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (lastDist > 0) { scale = lastScale * (dist / lastDist); scale = Math.max(0.5, Math.min(5, scale)); applyTransform(); }
-                } else if (isDragging && e.touches.length === 1 && scale > 1) {
-                    translateX = e.touches[0].clientX - startX;
-                    translateY = e.touches[0].clientY - startY;
-                    applyTransform();
-                }
-            }, { passive: false });
-            viewer.addEventListener('touchend', (e) => {
-                if (e.touches.length < 2) isPinching = false;
-                if (e.touches.length === 0) { isDragging = false; if (scale < 1) resetZoom(); }
-            });
-        }
-
-        function renderSheets(filter) {
-            const list = document.getElementById('sheetList');
-            let items = data.sheets;
-            if (filter) items = items.filter(i => i.title&&i.title.includes(filter));
-            if (items.length === 0) {
-                list.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🎼</div><div class="empty-text">${filter?'没有找到相关谱子':'还没有谱子图片，快去添加第一张吧～'}</div></div>`;
-                return;
-            }
-            list.innerHTML = items.map(item => {
-                const idx = data.sheets.indexOf(item);
-                const thumb = item.thumbnail?`<img src="${item.thumbnail}" alt="">`:'🎼';
-                return `<div class="sheet-card" onclick="viewSheet(${idx})">
-                    <div class="sheet-cover">${thumb}</div>
-                    <div class="sheet-info"><h4>${item.title||'未命名谱子'}</h4><p>${item.date||(item.fileName?formatSize(item.fileSize||0):'点击查看大图')}</p></div>
-                </div>`;
-            }).join('');
-        }
-
-        function renderVideos(filter) {
-            const list = document.getElementById('videoList');
-            let items = data.videos;
-            if (filter) items = items.filter(i => i.title&&i.title.includes(filter));
-            if (items.length === 0) {
-                list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎬</div><div class="empty-text">${filter?'没有找到相关视频':'还没有伴奏视频，快去添加第一个吧～'}</div></div>`;
-                return;
-            }
-            list.innerHTML = items.map(item => {
-                const idx = data.videos.indexOf(item);
-                const sz = item.fileSize?` · ${formatSize(item.fileSize)}`:'';
-                return `<div class="media-item" onclick="playVideo(${idx})">
-                    <div class="media-cover">🎬</div>
-                    <div class="media-info"><h4>${item.title||'未命名视频'}</h4><p>${item.desc||('点击播放'+sz)}</p></div>
-                    <div class="media-play">▶</div>
-                </div>`;
-            }).join('');
-        }
-
-        async function playVideo(index) {
-            const item = data.videos[index];
-            if (item.fileId) {
-                try {
-                    showToast('正在加载视频...', 1500);
-                    const file = await getFileFromDB(item.fileId);
-                    if (file && file.blob) { showPlayer(item.title, `<video src="${URL.createObjectURL(file.blob)}" controls autoplay playsinline></video>`); return; }
-                } catch(e) { console.error(e); showToast('视频加载失败'); }
-            }
-            if (item.url) { window.open(item.url, '_blank'); return; }
-            showToast('无法播放该视频');
-        }
-
-        function renderAudios(filter) {
-            const list = document.getElementById('audioList');
-            let items = data.audios;
-            if (filter) items = items.filter(i => i.title&&i.title.includes(filter));
-            if (items.length === 0) {
-                list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎧</div><div class="empty-text">${filter?'没有找到相关音频':'还没有伴奏音频，快去添加第一个吧～'}</div></div>`;
-                return;
-            }
-            list.innerHTML = items.map(item => {
-                const idx = data.audios.indexOf(item);
-                const sz = item.fileSize?` · ${formatSize(item.fileSize)}`:'';
-                return `<div class="media-item" onclick="playAudio(${idx})">
-                    <div class="media-cover" style="background:linear-gradient(135deg,#DDA0DD,#BA55D3);">🎧</div>
-                    <div class="media-info"><h4>${item.title||'未命名音频'}</h4><p>${item.desc||('点击播放'+sz)}</p></div>
-                    <div class="media-play" style="background:linear-gradient(135deg,#DDA0DD,#BA55D3);">▶</div>
-                </div>`;
-            }).join('');
-        }
-
-        async function playAudio(index) {
-            const item = data.audios[index];
-            if (item.fileId) {
-                try {
-                    showToast('正在加载音频...', 1500);
-                    const file = await getFileFromDB(item.fileId);
-                    if (file && file.blob) { showPlayer(item.title, `<audio src="${URL.createObjectURL(file.blob)}" controls autoplay></audio>`); return; }
-                } catch(e) { console.error(e); showToast('音频加载失败'); }
-            }
-            if (item.url) { window.open(item.url, '_blank'); return; }
-            showToast('无法播放该音频');
-        }
-
-        function showPlayer(title, html) {
-            document.getElementById('playerTitle').textContent = title;
-            document.getElementById('playerContent').innerHTML = html;
-            document.getElementById('playerOverlay').classList.add('show');
-        }
-
-        function closePlayer() {
-            const content = document.getElementById('playerContent');
-            content.querySelectorAll('video,audio').forEach(el => { el.pause(); el.src=''; });
-            content.innerHTML = '';
-            document.getElementById('playerOverlay').classList.remove('show');
-        }
-
-        document.getElementById('playerOverlay').addEventListener('click', function(e) { if (e.target===this) closePlayer(); });
-
-        function closeDetail(e) { if (e&&e.target!==e.currentTarget) return; document.getElementById('detailOverlay').classList.remove('show'); }
-
-        function doSearch() { renderAll(document.getElementById('searchInput').value.trim()); }
-
-        function openAddModal() {
-            pendingFile = null;
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('submitBtn').textContent = '保存';
-            const titles = { lessons:'📝 添加课程记录', sheets:'🎼 添加谱子图片', videos:'🎬 添加伴奏视频', audios:'🎧 添加伴奏音频' };
-            document.getElementById('modalTitle').textContent = titles[currentTab];
-            const forms = {
-                lessons: `
-                    <div class="form-group"><label>上课日期</label><input type="date" id="f_date"></div>
-                    <div class="form-group"><label>课程标题</label><input type="text" id="f_title" placeholder="例如：第3课 - 小星星练习"></div>
-                    <div class="form-group"><label>课程内容 / 老师点评</label><textarea id="f_content" placeholder="记录本节课学习内容、老师点评、注意事项..."></textarea></div>
-                    <div class="form-group"><label>📌 课后作业</label><textarea id="f_homework" placeholder="记录本节课布置的课后作业，比如：练习小星星前4小节、每天练15分钟..."></textarea></div>
-                    <div class="form-group"><label>标签（逗号分隔）</label><input type="text" id="f_tags" placeholder="例如：声乐, 气息, 高音"></div>`,
-                sheets: `
-                    <div class="form-group"><label>上传谱子图片</label>
-                        <div class="upload-area" id="uploadArea">
-                            <div class="upload-icon">🖼️</div><div class="upload-text">点击上传谱子图片</div>
-                            <div class="upload-hint">支持 JPG / PNG / HEIC<br>从手机相册或电脑文件夹选择</div>
-                            <input type="file" id="f_file" accept="image/*" onchange="handleFileSelect(this)">
-                        </div>
-                        <div class="upload-loading" id="uploadLoading"><div class="spinner"></div><p id="loadingText">正在读取文件...</p><div class="upload-progress"><div class="upload-progress-bar" id="progressBar"></div></div></div>
-                        <div id="filePreview"></div>
-                    </div>
-                    <div class="form-group"><label>谱子名称 <span style="color:#FF6B9D">*</span></label><input type="text" id="f_title" placeholder="例如：小星星 简谱"></div>
-                    <div class="form-group"><label>日期（可选）</label><input type="date" id="f_date"></div>
-                    <div class="form-group"><label>备注（可选）</label><textarea id="f_content" placeholder="这首曲子的练习要点..."></textarea></div>`,
-                videos: `
-                    <div class="form-group"><label>上传伴奏视频</label>
-                        <div class="upload-area" id="uploadArea">
-                            <div class="upload-icon">🎬</div><div class="upload-text">点击上传伴奏视频</div>
-                            <div class="upload-hint">支持 MP4 / MOV / AVI<br>建议单个文件不超过 300MB</div>
-                            <input type="file" id="f_file" accept="video/*" onchange="handleFileSelect(this)">
-                        </div>
-                        <div class="upload-loading" id="uploadLoading"><div class="spinner"></div><p id="loadingText">正在读取视频文件...</p><div class="upload-progress"><div class="upload-progress-bar" id="progressBar"></div></div></div>
-                        <div id="filePreview"></div>
-                    </div>
-                    <div class="form-group"><label>视频名称 <span style="color:#FF6B9D">*</span></label><input type="text" id="f_title" placeholder="例如：小星星 伴奏视频"></div>
-                    <div class="form-group"><label>描述（可选）</label><textarea id="f_desc" placeholder="视频特点、调性、速度等..."></textarea></div>`,
-                audios: `
-                    <div class="form-group"><label>上传伴奏音频</label>
-                        <div class="upload-area" id="uploadArea">
-                            <div class="upload-icon">🎧</div><div class="upload-text">点击上传伴奏音频</div>
-                            <div class="upload-hint">支持 MP3 / WAV / M4A / AAC<br>建议单个文件不超过 100MB</div>
-                            <input type="file" id="f_file" accept="audio/*" onchange="handleFileSelect(this)">
-                        </div>
-                        <div class="upload-loading" id="uploadLoading"><div class="spinner"></div><p id="loadingText">正在读取音频文件...</p><div class="upload-progress"><div class="upload-progress-bar" id="progressBar"></div></div></div>
-                        <div id="filePreview"></div>
-                    </div>
-                    <div class="form-group"><label>音频名称 <span style="color:#FF6B9D">*</span></label><input type="text" id="f_title" placeholder="例如：小星星 纯伴奏"></div>
-                    <div class="form-group"><label>描述（可选）</label><textarea id="f_desc" placeholder="调性、速度、伴奏乐器等..."></textarea></div>`
-            };
-            document.getElementById('modalForm').innerHTML = forms[currentTab];
-            document.getElementById('modalOverlay').classList.add('show');
-        }
-
-        async function handleFileSelect(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-            const maxSize = isImage ? 20*1024*1024 : (isVideo ? 300*1024*1024 : 100*1024*1024);
-            if (file.size > maxSize) { showToast(`文件太大（${formatSize(file.size)}），最大支持 ${formatSize(maxSize)}`); input.value=''; return; }
-            const uploadArea = document.getElementById('uploadArea');
-            const loading = document.getElementById('uploadLoading');
-            const progressBar = document.getElementById('progressBar');
-            if (uploadArea) uploadArea.style.display = 'none';
-            if (loading) loading.classList.add('show');
-            try {
-                let progress = 0;
-                const pi = setInterval(() => { progress += Math.random()*15; if (progress>90) progress=90; if (progressBar) progressBar.style.width = progress+'%'; }, 200);
-                const previewUrl = URL.createObjectURL(file);
-                let thumbnail = null;
-                if (isImage) {
-                    try { thumbnail = await generateThumbnail(file); } catch(e) { thumbnail = await fileToBase64(file); }
-                }
-                clearInterval(pi);
-                if (progressBar) progressBar.style.width = '100%';
-                pendingFile = { file, blob: file, name: file.name, type: file.type, size: file.size, thumbnail, previewUrl };
-                const pd = document.getElementById('filePreview');
-                let ph = '';
-                if (isImage) ph = `<div class="file-preview"><img src="${previewUrl}" alt=""><div class="file-name">📎 ${file.name}（${formatSize(file.size)}）</div></div>`;
-                else if (isVideo) ph = `<div class="file-preview"><video src="${previewUrl}" controls muted playsinline></video><div class="file-name">🎬 ${file.name}（${formatSize(file.size)}）</div></div>`;
-                else ph = `<div class="file-preview"><audio src="${previewUrl}" controls></audio><div class="file-name">🎧 ${file.name}（${formatSize(file.size)}）</div></div>`;
-                if (pd) pd.innerHTML = ph;
-                if (loading) loading.classList.remove('show');
-                const ti = document.getElementById('f_title');
-                if (ti && !ti.value) ti.value = file.name.replace(/\.[^/.]+$/, '');
-                showToast('文件读取成功！');
-            } catch(e) {
-                console.error(e);
-                if (loading) loading.classList.remove('show');
-                if (uploadArea) uploadArea.style.display = 'block';
-                showToast('文件读取失败，请换一个文件试试');
-                input.value = '';
-            }
-        }
-
-        function closeModal() {
-            if (pendingFile && pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
-            pendingFile = null;
-            editingIndex = -1;
-            document.getElementById('modalOverlay').classList.remove('show');
-        }
-
-        async function submitForm() {
-            const titleInput = document.getElementById('f_title');
-            const title = titleInput ? titleInput.value.trim() : '';
-            if (!title) { showToast('请填写名称/标题哦～'); return; }
-            if (currentTab !== 'lessons' && !pendingFile) { showToast('请先上传一个文件哦～'); return; }
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true; submitBtn.textContent = '保存中...';
-            const item = { title, id: Date.now() + '_' + Math.random().toString(36).substr(2, 5) };
-            try {
-                if (currentTab === 'lessons') {
-                    item.date = document.getElementById('f_date').value || new Date().toISOString().split('T')[0];
-                    item.content = document.getElementById('f_content').value;
-                    item.homework = document.getElementById('f_homework').value;
-                    item.tags = document.getElementById('f_tags').value;
-                    if (editingIndex >= 0) {
-                        item.id = data.lessons[editingIndex].id;
-                        data.lessons[editingIndex] = item;
-                    } else {
-                        data.lessons.unshift(item);
-                    }
-                } else {
-                    if (pendingFile) {
-                        const fid = 'file_'+item.id;
-                        showToast('正在保存文件...', 1500);
-                        await saveFileToDB(fid, pendingFile.blob, pendingFile.name, pendingFile.type);
-                        item.fileId = fid; item.fileName = pendingFile.name; item.fileType = pendingFile.type; item.fileSize = pendingFile.size;
-                        if (pendingFile.thumbnail) item.thumbnail = pendingFile.thumbnail;
-                    }
-                    if (currentTab === 'sheets') { item.date = document.getElementById('f_date').value; item.content = document.getElementById('f_content').value; data.sheets.unshift(item); }
-                    else if (currentTab === 'videos') { item.desc = document.getElementById('f_desc').value; data.videos.unshift(item); }
-                    else if (currentTab === 'audios') { item.desc = document.getElementById('f_desc').value; data.audios.unshift(item); }
-                }
-                saveData(); renderAll();
-                if (pendingFile && pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
-                pendingFile = null;
-                closeModal();
-                showToast('保存成功！🎉');
-            } catch(e) {
-                console.error('保存失败', e);
-                showToast('保存失败：存储空间可能不足');
-            } finally {
-                submitBtn.disabled = false; submitBtn.textContent = '保存';
-            }
-        }
-
-        function closePage() { if (confirm('确定要离开小菠萝的音乐课堂吗？')) window.close(); }
-        function sharePage() {
-            if (navigator.share) navigator.share({ title:'小菠萝的音乐课堂', text:'记录每一次成长，珍藏每一段旋律', url:window.location.href });
-            else showToast('可以复制链接发给朋友哦～');
-        }
-        document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target===this) closeModal(); });
-
-        (async function init() {
-            const migrated = migrateOldData();
-            if (migrated) showToast('已恢复您之前的记录！🍍', 3000);
-            try { await openDB(); } catch(e) { console.error('IndexedDB失败', e); }
-            loadData();
-        })();
     </script>
 </body>
 </html>
