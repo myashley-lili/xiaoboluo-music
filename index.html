@@ -1,182 +1,735 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>小菠萝-Music</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root{
-      --pine-yellow:#FFD166;
-      --soft-pink:#FFB6C1;
-      --main:#222;
-      --bg:#fffdf9;
-      --card:#ffffff;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui, sans-serif;}
-    body{background:var(--bg);color:var(--main);padding:16px;padding-bottom:90px;}
-    header{text-align:center;margin-bottom:24px;}
-    header h1{color:#2c3e50;font-size:28px;}
-    .status{font-size:14px;margin-top:6px;}
-    .tabs{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;}
-    .tab{padding:10px 14px;background:#f3f3f3;border-radius:99px;white-space:nowrap;border:none;cursor:pointer;font-size:15px;}
-    .tab.active{background:var(--pine-yellow);font-weight:bold;}
-    .search-wrap{margin-bottom:16px;}
-    .search-input{width:100%;padding:10px 14px;border-radius:12px;border:1px solid #ddd;font-size:16px;}
-    .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px #00000010;}
-    .card-title{font-weight:bold;margin-bottom:4px;}
-    .card small{color:#666;}
-    .manage-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-size:14px;}
-    .btn-manage{background:#444;color:white;}
-    .btn-danger{background:#ef4444;color:white;}
-    .fab{position:fixed;right:20px;bottom:20px;width:52px;height:52px;border-radius:50%;background:var(--pine-yellow);border:none;font-size:22px;box-shadow:0 3px 10px #00000022;cursor:pointer;}
-    .modal{position:fixed;inset:0;background:#00000070;display:flex;align-items:center;justify-content:center;padding:16px;z:100;}
-    .modal-box{background:white;border-radius:18px;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow:auto;}
-    .modal-box h3{margin-bottom:16px;}
-    .form-item{margin-bottom:12px;}
-    .form-item label{display:block;margin-bottom:4px;font-size:14px;}
-    .form-item input,.form-item textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:16px;}
-    .modal-footer{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px,1fr));gap:12px;}
-    .media-item{border-radius:12px;overflow:hidden;background:white;box-shadow:0 2px 6px #00000010;}
-    .media-item img{width:100%;aspect-ratio:1/1;object-fit:cover;cursor:pointer;}
-    .media-item .name{padding:8px;font-size:14px;}
-    .media-item .actions{padding:0 8px 8px;display:flex;gap:6px;}
-    .media-item .actions button{font-size:12px;padding:4px 6px;}
-    .lightbox{position:fixed;inset:0;background:#000000dd;display:none;align-items:center;justify-content:center;z:200;padding:20px;}
-    .lightbox img{max-width:100%;max-height:100%;cursor:pointer;}
-    .page{display:none;}
-    .page.active{display:block;}
-    audio,video{width:100%;border-radius:10px;margin:6px 0;}
-    .tip{color:#777;font-size:13px;margin:8px 0;}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小菠萝的音乐课堂</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+            background: linear-gradient(180deg, #FFF0F5 0%, #F0F8FF 100%);
+            min-height: 100vh; color: #333; overflow-x: hidden;
+        }
+        .top-nav {
+            background: #fff; height: 56px; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 100;
+        }
+        .nav-btn {
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; cursor: pointer; border: none; background: none; color: #333;
+        }
+        .nav-title { font-size: 18px; font-weight: 700; color: #333; display: flex; align-items: center; gap: 4px; }
+        .header-banner {
+            background: linear-gradient(135deg, #FFD93D 0%, #FF9A8B 50%, #FFA07A 100%);
+            padding: 30px 20px 50px; text-align: center; position: relative; overflow: hidden; border-radius: 0 0 30px 30px;
+        }
+        .music-note { position: absolute; opacity: 0.15; font-size: 60px; color: #8B4513; }
+        .note-1 { top: 20px; left: 20px; transform: rotate(-15deg); }
+        .note-2 { top: 40px; right: 30px; font-size: 80px; transform: rotate(10deg); }
+        .note-3 { bottom: 30px; left: 40px; font-size: 50px; transform: rotate(5deg); }
+        .avatar-circle {
+            width: 110px; height: 110px; border-radius: 50%; background: #fff; margin: 0 auto 18px;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden; position: relative; z-index: 2;
+        }
+        .avatar-placeholder { font-size: 60px; }
+        .banner-title {
+            font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 8px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; z-index: 2;
+        }
+        .banner-subtitle {
+            font-size: 14px; color: rgba(255,255,255,0.95); display: flex; align-items: center;
+            justify-content: center; gap: 6px; position: relative; z-index: 2;
+        }
+        .tab-nav {
+            background: #fff; margin: -25px 16px 0; border-radius: 16px; display: flex; padding: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); position: relative; z-index: 10;
+        }
+        .tab-item {
+            flex: 1; text-align: center; padding: 12px 4px; cursor: pointer; border-radius: 12px;
+            transition: all 0.3s; position: relative;
+        }
+        .tab-item .tab-icon { font-size: 28px; margin-bottom: 4px; display: block; }
+        .tab-item .tab-label { font-size: 13px; color: #999; font-weight: 500; }
+        .tab-item.active .tab-label { color: #FF6B9D; font-weight: 700; }
+        .tab-item.active::after {
+            content: ""; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+            width: 30px; height: 3px; background: #FF6B9D; border-radius: 2px;
+        }
+        .stats-row { display: flex; gap: 10px; padding: 20px 16px 0; }
+        .stat-card {
+            flex: 1; background: #fff; border-radius: 16px; padding: 18px 8px; text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s;
+        }
+        .stat-card:active { transform: scale(0.96); }
+        .stat-number { font-size: 32px; font-weight: 800; color: #FF8C69; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; color: #999; }
+        .search-box {
+            margin: 16px; background: #fff; border-radius: 16px; padding: 14px 16px;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        .search-box .search-icon { font-size: 18px; opacity: 0.4; }
+        .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #333; background: transparent; }
+        .search-box input::placeholder { color: #ccc; }
+        .content-area { padding: 0 16px; min-height: 300px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .empty-state { text-align: center; padding: 50px 20px 30px; }
+        .empty-icon { font-size: 60px; margin-bottom: 20px; opacity: 0.6; }
+        .empty-text { font-size: 15px; color: #ccc; line-height: 1.6; }
+        .footer-encourage { text-align: center; padding: 40px 20px 80px; }
+        .footer-pineapple { font-size: 36px; margin-bottom: 10px; }
+        .footer-text { font-size: 14px; color: #ccc; }
+        .fab {
+            position: fixed; bottom: 30px; right: 20px; width: 56px; height: 56px; border-radius: 50%;
+            background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.12); display: flex; align-items: center;
+            justify-content: center; font-size: 26px; cursor: pointer; z-index: 50; transition: all 0.2s; border: 1px solid #f0f0f0;
+        }
+        .fab:active { transform: scale(0.92); }
+        .list-item {
+            background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s;
+        }
+        .list-item:active { transform: scale(0.98); }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .item-title { font-size: 15px; font-weight: 700; color: #333; }
+        .item-date { font-size: 12px; color: #FF8C69; background: #FFF3EE; padding: 3px 10px; border-radius: 10px; }
+        .item-desc { font-size: 13px; color: #999; line-height: 1.6; }
+        .item-homework {
+            margin-top: 10px; background: #FFF9E6; border-radius: 10px; padding: 10px 12px;
+            font-size: 12px; color: #E65100; line-height: 1.6;
+        }
+        .item-homework .hw-label { font-weight: 700; margin-bottom: 4px; }
+        .item-tags { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .item-tag { font-size: 11px; color: #FF6B9D; background: #FFF0F5; padding: 2px 10px; border-radius: 8px; }
+        .sheet-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .sheet-card {
+            background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .sheet-card:active { transform: scale(0.96); }
+        .sheet-cover {
+            height: 140px; background: linear-gradient(135deg, #FFE4B5, #FFDAB9);
+            display: flex; align-items: center; justify-content: center; font-size: 40px; overflow: hidden;
+        }
+        .sheet-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .sheet-info { padding: 12px; }
+        .sheet-info h4 { font-size: 14px; color: #333; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sheet-info p { font-size: 11px; color: #ccc; }
+        .media-item {
+            background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .media-item:active { transform: scale(0.98); }
+        .media-cover {
+            width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #FFB6C1, #FFA07A);
+            display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; overflow: hidden;
+        }
+        .media-info { flex: 1; min-width: 0; }
+        .media-info h4 { font-size: 15px; color: #333; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .media-info p { font-size: 12px; color: #ccc; }
+        .media-play {
+            width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #FFD93D, #FF8C69);
+            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; flex-shrink: 0;
+        }
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff; border-radius: 24px 24px 0 0; padding: 24px 20px 30px;
+            width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-handle { width: 40px; height: 4px; background: #eee; border-radius: 2px; margin: 0 auto 20px; }
+        .modal h3 { font-size: 18px; color: #333; margin-bottom: 20px; text-align: center; font-weight: 700; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 8px; font-weight: 600; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px 14px; border: 1.5px solid #f0f0f0; border-radius: 12px;
+            font-size: 14px; color: #333; background: #fafafa; outline: none; transition: border-color 0.2s; font-family: inherit;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: #FF8C69; background: #fff; }
+        .form-group textarea { resize: vertical; min-height: 70px; }
+        .upload-area {
+            border: 2px dashed #FFD93D; border-radius: 14px; padding: 28px 20px; text-align: center;
+            background: #FFFDF5; cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        .upload-area:hover { border-color: #FF8C69; background: #FFF9E6; }
+        .upload-area:active { background: #FFF3E0; }
+        .upload-area .upload-icon { font-size: 40px; margin-bottom: 10px; }
+        .upload-area .upload-text { font-size: 15px; color: #666; font-weight: 600; }
+        .upload-area .upload-hint { font-size: 11px; color: #ccc; margin-top: 6px; line-height: 1.5; }
+        .upload-area input[type="file"] {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .upload-loading { display: none; text-align: center; padding: 20px; }
+        .upload-loading.show { display: block; }
+        .spinner {
+            width: 36px; height: 36px; border: 3px solid #FFE082; border-top-color: #FF8C69;
+            border-radius: 50%; margin: 0 auto 12px; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .upload-loading p { font-size: 13px; color: #999; }
+        .upload-progress { margin-top: 10px; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+        .upload-progress-bar { height: 100%; background: linear-gradient(90deg, #FFD93D, #FF8C69); border-radius: 3px; width: 0%; transition: width 0.3s; }
+        .file-preview { margin-top: 12px; border-radius: 10px; overflow: hidden; background: #f5f5f5; }
+        .file-preview img, .file-preview video { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+        .file-preview audio { width: 100%; display: block; }
+        .file-name { padding: 10px 12px; font-size: 12px; color: #666; background: #fafafa; display: flex; align-items: center; gap: 6px; word-break: break-all; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .modal-actions button { flex: 1; padding: 14px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-cancel { background: #f5f5f5; color: #999; }
+        .btn-submit { background: linear-gradient(135deg, #FFD93D, #FF8C69); color: #fff; }
+        .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .player-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9); z-index: 300; align-items: center; justify-content: center; padding: 20px;
+        }
+        .player-overlay.show { display: flex; }
+        .player-box { width: 100%; max-width: 700px; background: #1a1a1a; border-radius: 16px; overflow: hidden; position: relative; }
+        .player-close {
+            position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; background: rgba(0,0,0,0.5);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; cursor: pointer; z-index: 10; border: none;
+        }
+        .player-box video, .player-box img { width: 100%; max-height: 75vh; object-fit: contain; display: block; background: #000; }
+        .player-box audio { width: 100%; display: block; background: #1a1a1a; }
+        .player-title { padding: 14px 16px; color: #fff; font-size: 15px; font-weight: 600; background: #222; }
+        .detail-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 250; align-items: center; justify-content: center; padding: 20px;
+        }
+        .detail-overlay.show { display: flex; }
+        .detail-box {
+            background: #fff; border-radius: 20px; padding: 24px; width: 100%; max-width: 420px;
+            max-height: 80vh; overflow-y: auto; animation: fadeIn 0.2s ease;
+        }
+        .detail-box h3 { font-size: 18px; color: #333; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px dashed #FFE082; }
+        .detail-row { margin-bottom: 14px; }
+        .detail-row .dt-label { font-size: 12px; color: #FF8C69; font-weight: 700; margin-bottom: 4px; }
+        .detail-row .dt-content { font-size: 14px; color: #555; line-height: 1.7; }
+        .detail-homework { background: #FFF9E6; border-radius: 12px; padding: 14px; margin-top: 8px; }
+        .detail-close {
+            width: 100%; padding: 12px; margin-top: 20px; background: linear-gradient(135deg, #FFD93D, #FF8C69);
+            color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
+        }
+        .toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 14px 24px; border-radius: 12px;
+            font-size: 14px; z-index: 999; max-width: 80%; text-align: center; line-height: 1.5; display: none;
+        }
+        .toast.show { display: block; animation: toastIn 0.3s ease; }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+    </style>
 </head>
 <body>
-<header>
-  <h1>🍍小菠萝-Music</h1>
-  <div class="status" id="connStatus">正在连接云端...</div>
-</header>
+    <div class="top-nav">
+        <button class="nav-btn" onclick="closePage()">✕</button>
+        <div class="nav-title">小菠萝的音乐课堂 🎵</div>
+        <button class="nav-btn" onclick="sharePage()">↗</button>
+    </div>
+    <div class="header-banner">
+        <div class="music-note note-1">🎵</div>
+        <div class="music-note note-2">🎵</div>
+        <div class="music-note note-3">🎶</div>
+        <div class="avatar-circle"><span class="avatar-placeholder">🍍</span></div>
+        <div class="banner-title">小菠萝的音乐课堂</div>
+        <div class="banner-subtitle"><span>🎵</span><span>记录每一次成长，珍藏每一段旋律</span><span>🎵</span></div>
+    </div>
+    <div class="tab-nav">
+        <div class="tab-item active" data-tab="lessons" onclick="switchTab('lessons')"><span class="tab-icon">📝</span><span class="tab-label">课程记录</span></div>
+        <div class="tab-item" data-tab="sheets" onclick="switchTab('sheets')"><span class="tab-icon">🎼</span><span class="tab-label">谱子图片</span></div>
+        <div class="tab-item" data-tab="videos" onclick="switchTab('videos')"><span class="tab-icon">🎬</span><span class="tab-label">伴奏视频</span></div>
+        <div class="tab-item" data-tab="audios" onclick="switchTab('audios')"><span class="tab-icon">🎧</span><span class="tab-label">伴奏音频</span></div>
+    </div>
+    <div class="stats-row">
+        <div class="stat-card" onclick="switchTab('lessons')"><div class="stat-number" id="statLessons">0</div><div class="stat-label">累计课时</div></div>
+        <div class="stat-card" onclick="switchTab('sheets')"><div class="stat-number" id="statSheets">0</div><div class="stat-label">谱子收藏</div></div>
+        <div class="stat-card" onclick="switchTab('videos')"><div class="stat-number" id="statVideos">0</div><div class="stat-label">伴奏视频</div></div>
+        <div class="stat-card" onclick="switchTab('audios')"><div class="stat-number" id="statAudios">0</div><div class="stat-label">伴奏音频</div></div>
+    </div>
+    <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索课程记录..." oninput="doSearch()">
+    </div>
+    <div class="content-area">
+        <div class="tab-content active" id="content-lessons"><div id="lessonList"><div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">还没有课程记录，快去添加第一条吧～</div></div></div></div>
+        <div class="tab-content" id="content-sheets"><div id="sheetList" class="sheet-grid"><div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🎼</div><div class="empty-text">还没有谱子图片，快去添加第一张吧～</div></div></div></div>
+        <div class="tab-content" id="content-videos"><div id="videoList"><div class="empty-state"><div class="empty-icon">🎬</div><div class="empty-text">还没有伴奏视频，快去添加第一个吧～</div></div></div></div>
+        <div class="tab-content" id="content-audios"><div id="audioList"><div class="empty-state"><div class="empty-icon">🎧</div><div class="empty-text">还没有伴奏音频，快去添加第一个吧～</div></div></div></div>
+    </div>
+    <div class="footer-encourage"><div class="footer-pineapple">🍍</div><div class="footer-text">小菠萝陪你一起练琴加油～</div></div>
+    <div class="fab" onclick="openAddModal()">📝</div>
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-handle"></div>
+            <h3 id="modalTitle">添加课程记录</h3>
+            <div id="modalForm"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-submit" id="submitBtn" onclick="submitForm()">保存</button>
+            </div>
+        </div>
+    </div>
+    <div class="player-overlay" id="playerOverlay">
+        <div class="player-box">
+            <button class="player-close" onclick="closePlayer()">✕</button>
+            <div id="playerContent"></div>
+            <div class="player-title" id="playerTitle"></div>
+        </div>
+    </div>
+    <div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)"><div class="detail-box" id="detailBox"></div></div>
+    <div class="toast" id="toast"></div>
 
-<div class="tabs">
-  <button class="tab active" data-target="records">📝课程记录</button>
-  <button class="tab" data-target="scores">🎼谱子图片</button>
-  <button class="tab" data-target="videos">🎬伴奏视频</button>
-  <button class="tab" data-target="audios">🎧伴奏音频</button>
-</div>
+    <script>
+        // ===== 固定存储名字（以后永远不改，保证不丢数据）=====
+        const STORAGE_KEY = 'xiaoboluo_music_data';
+        const DB_NAME = 'xiaoboluo_music_files';
+        const DB_VERSION = 1;
+        let db = null;
 
-<!-- 课程记录页 -->
-<div class="page active" id="records">
-  <div class="search-wrap">
-    <input class="search-input" placeholder="搜索课程记录..." id="searchRecords">
-  </div>
-  <div class="manage-bar">
-    <div></div>
-    <button class="btn btn-manage" id="manageRecords">管理</button>
-  </div>
-  <div id="recordsList"></div>
-</div>
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains('files')) {
+                        database.createObjectStore('files', { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+                request.onerror = (e) => reject(e);
+            });
+        }
 
-<!-- 谱子页 -->
-<div class="page" id="scores">
-  <div class="search-wrap">
-    <input class="search-input" placeholder="搜索谱子名称..." id="searchScores">
-  </div>
-  <div class="manage-bar">
-    <div></div>
-    <button class="btn btn-manage" id="manageScores">管理</button>
-  </div>
-  <div class="grid" id="scoresList"></div>
-</div>
+        function saveFileToDB(id, blob, name, type) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('files', 'readwrite');
+                tx.objectStore('files').put({ id, blob, name, type, size: blob.size });
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+        }
 
-<!-- 视频页 -->
-<div class="page" id="videos">
-  <div class="search-wrap">
-    <input class="search-input" placeholder="搜索伴奏视频..." id="searchVideos">
-  </div>
-  <div class="manage-bar">
-    <div></div>
-    <button class="btn btn-manage" id="manageVideos">管理</button>
-  </div>
-  <div id="videosList"></div>
-</div>
+        function getFileFromDB(id) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('files', 'readonly');
+                const request = tx.objectStore('files').get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e);
+            });
+        }
 
-<!-- 音频页 -->
-<div class="page" id="audios">
-  <div class="search-wrap">
-    <input class="search-input" placeholder="搜索伴奏音频..." id="searchAudios">
-  </div>
-  <div class="manage-bar">
-    <div></div>
-    <button class="btn btn-manage" id="manageAudios">管理</button>
-  </div>
-  <div id="audiosList"></div>
-</div>
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
 
-<!-- 右下角悬浮按钮 -->
-<button class="fab" id="fabBtn">+</button>
+        function generateThumbnail(file, maxWidth = 400) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const scale = Math.min(1, maxWidth / img.width);
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
 
-<!-- 图片放大弹窗 -->
-<div class="lightbox" id="lightbox">
-  <img id="lightImg">
-</div>
+        // ===== 自动迁移旧版本数据（关键！保证不丢记录）=====
+        function migrateOldData() {
+            const oldKeys = ['xiaoboluo_music_v2', 'xiaoboluo_music_v3', 'xiaoboluo_music'];
+            let migrated = false;
+            for (const key of oldKeys) {
+                try {
+                    const old = localStorage.getItem(key);
+                    if (old && !localStorage.getItem(STORAGE_KEY)) {
+                        localStorage.setItem(STORAGE_KEY, old);
+                        migrated = true;
+                        console.log('已迁移旧数据:', key);
+                    }
+                } catch(e) {}
+            }
+            return migrated;
+        }
 
-<!-- 新增/编辑表单弹窗 -->
-<div id="modalWrap"></div>
+        let data = { lessons: [], sheets: [], videos: [], audios: [] };
+        let currentTab = 'lessons';
+        let pendingFile = null;
 
-<script>
-// ========== Supabase配置（你的信息）==========
-const SUPABASE_URL = "https://ixldmkdcnhejmtjpgawm.supabase.co";
-const SUPABASE_KEY = "sb_publishable_ntl8P9fwJxo3QAf_EkqAnQ_nD8KJEkq";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        function showToast(msg, duration = 2500) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
 
-// 全局状态
-let currentTab = "records";
-let manageMode = {records:false,scores:false,videos:false,audios:false};
+        function loadData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) data = JSON.parse(saved);
+            } catch(e) { console.error('加载数据失败', e); }
+            updateStats();
+            renderAll();
+        }
 
-// Tab切换
-document.querySelectorAll(".tab").forEach(tab=>{
-  tab.onclick = ()=>{
-    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-    tab.classList.add("active");
-    const target = tab.dataset.target;
-    currentTab = target;
-    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-    document.getElementById(target).classList.add("active");
-    updateFabIcon();
-    loadAllData();
-  }
-})
-function updateFabIcon(){
-  const fab = document.getElementById("fabBtn");
-  const map = {records:"📝",scores:"🖼️",videos:"🎬",audios:"🎧"};
-  fab.innerText = map[currentTab];
-}
-updateFabIcon();
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch(e) { showToast('保存失败，可能是存储空间不足'); }
+            updateStats();
+        }
 
-// 云端连接检测
-(async function testConn(){
-  const {error} = await supabase.from("records").select("id").limit(1);
-  const el = document.getElementById("connStatus");
-  if(error){
-    el.innerHTML = "❌云端连接失败，请检查Supabase配置";
-    el.style.color="red";
-  }else{
-    el.innerHTML = "☁️云端已连接";
-    el.style.color="#209950";
-  }
-})();
+        function updateStats() {
+            document.getElementById('statLessons').textContent = data.lessons.length;
+            document.getElementById('statSheets').textContent = data.sheets.length;
+            document.getElementById('statVideos').textContent = data.videos.length;
+            document.getElementById('statAudios').textContent = data.audios.length;
+        }
 
-// Fab按钮弹窗
-document.getElementById("fabBtn").onclick = async ()=>{
-  if(currentTab === "records"){
-    openRecordModal();
-  }else{
-    openFileUploadModal();
-  }
-}
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab-item[data-tab="${tab}"]`).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('content-' + tab).classList.add('active');
+            const ph = { lessons: '搜索课程记录...', sheets: '搜索谱子...', videos: '搜索伴奏视频...', audios: '搜索伴奏音频...' };
+            document.getElementById('searchInput').placeholder = ph[tab];
+            document.getElementById('searchInput').value = '';
+            renderAll();
+        }
 
-// 管理按钮开关
-document.getElementById("manageRecords").onclick = ()=>{manageMode.records=!manageMode.records;loadAllData();}
-document.getElementById("manageScores").onclick = ()=>{manageMode.scores=!manageMode.scores;loadAllData();}
-document.getElementById("manageVideos
+        function renderAll(filter = '') {
+            renderLessons(filter); renderSheets(filter); renderVideos(filter); renderAudios(filter);
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + 'B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + 'KB';
+            return (bytes / 1024 / 1024).toFixed(1) + 'MB';
+        }
+
+        function renderLessons(filter) {
+            const list = document.getElementById('lessonList');
+            let items = data.lessons;
+            if (filter) items = items.filter(i => (i.title&&i.title.includes(filter))||(i.content&&i.content.includes(filter))||(i.homework&&i.homework.includes(filter))||(i.tags&&i.tags.includes(filter)));
+            if (items.length === 0) {
+                list.innerHTML = `<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">${filter?'没有找到相关记录':'还没有课程记录，快去添加第一条吧～'}</div></div>`;
+                return;
+            }
+            list.innerHTML = items.map(item => {
+                const idx = data.lessons.indexOf(item);
+                return `<div class="list-item" onclick="viewLesson(${idx})">
+                    <div class="item-header"><div class="item-title">${item.title||'未命名课程'}</div><div class="item-date">${item.date||''}</div></div>
+                    <div class="item-desc">${(item.content||'').substring(0,80)}${(item.content||'').length>80?'...':''}</div>
+                    ${item.homework?`<div class="item-homework"><div class="hw-label">📌 课后作业</div>${item.homework.substring(0,60)}${item.homework.length>60?'...':''}</div>`:''}
+                    ${item.tags?`<div class="item-tags">${item.tags.split(/[,，]/).filter(t=>t.trim()).map(t=>`<span class="item-tag">${t.trim()}</span>`).join('')}</div>`:''}
+                </div>`;
+            }).join('');
+        }
+
+        function viewLesson(index) {
+            const item = data.lessons[index];
+            document.getElementById('detailBox').innerHTML = `
+                <h3>📝 ${item.title||'课程详情'}</h3>
+                <div class="detail-row"><div class="dt-label">📅 上课日期</div><div class="dt-content">${item.date||'未设置'}</div></div>
+                <div class="detail-row"><div class="dt-label">📋 课程内容 / 老师点评</div><div class="dt-content">${item.content||'无'}</div></div>
+                ${item.homework?`<div class="detail-row"><div class="dt-label">📌 课后作业</div><div class="detail-homework"><div class="dt-content">${item.homework}</div></div></div>`:''}
+                ${item.tags?`<div class="detail-row"><div class="dt-label">🏷️ 标签</div><div class="dt-content">${item.tags}</div></div>`:''}
+                <button class="detail-close" onclick="closeDetail()">知道啦</button>`;
+            document.getElementById('detailOverlay').classList.add('show');
+        }
+
+        function renderSheets(filter) {
+            const list = document.getElementById('sheetList');
+            let items = data.sheets;
+            if (filter) items = items.filter(i => i.title&&i.title.includes(filter));
+            if (items.length === 0) {
+                list.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🎼</div><div class="empty-text">${filter?'没有找到相关谱子':'还没有谱子图片，快去添加第一张吧～'}</div></div>`;
+                return;
+            }
+            list.innerHTML = items.map(item => {
+                const idx = data.sheets.indexOf(item);
+                const thumb = item.thumbnail?`<img src="${item.thumbnail}" alt="">`:'🎼';
+                return `<div class="sheet-card" onclick="viewSheet(${idx})">
+                    <div class="sheet-cover">${thumb}</div>
+                    <div class="sheet-info"><h4>${item.title||'未命名谱子'}</h4><p>${item.date||(item.fileName?formatSize(item.fileSize||0):'点击查看大图')}</p></div>
+                </div>`;
+            }).join('');
+        }
+
+        async function viewSheet(index) {
+            const item = data.sheets[index];
+            if (item.fileId) {
+                try {
+                    const file = await getFileFromDB(item.fileId);
+                    if (file&&file.blob) { showPlayer(item.title, `<img src="${URL.createObjectURL(file.blob)}" alt="">`); return; }
+                } catch(e) { console.error(e); }
+            }
+            if (item.thumbnail&&item.thumbnail.startsWith('data:image')) { showPlayer(item.title, `<img src="${item.thumbnail}" alt="">`); return; }
+            if (item.url) { showPlayer(item.title, `<img src="${item.url}" alt="">`); return; }
+            showToast('无法打开该谱子');
+        }
+
+        function renderVideos(filter) {
+            const list = document.getElementById('videoList');
+            let items = data.videos;
+            if (filter) items = items.filter(i => i.title&&i.title.includes(filter));
+            if (items.length === 0) {
+                list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎬</div><div class="empty-text">${filter?'没有找到相关视频':'还没有伴奏视频，快去添加第一个吧～'}</div></div>`;
+                return;
+            }
+            list.innerHTML = items.map(item => {
+                const idx = data.videos.indexOf(item);
+                const sz = item.fileSize?` · ${formatSize(item.fileSize)}`:'';
+                return `<div class="media-item" onclick="playVideo(${idx})">
+                    <div class="media-cover">🎬</div>
+                    <div class="media-info"><h4>${item.title||'未命名视频'}</h4><p>${item.desc||('点击播放'+sz)}</p></div>
+                    <div class="media-play">▶</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function playVideo(index) {
+            const item = data.videos[index];
+            if (item.fileId) {
+                try {
+                    showToast('正在加载视频...', 1500);
+                    const file = await getFileFromDB(item.fileId);
+                    if (file&&file.blob) { showPlayer(item.title, `<video src="${URL.createObjectURL(file.blob)}" controls autoplay playsinline></video>`); return; }
+                } catch(e) { console.error(e); showToast('视频加载失败'); }
+            }
+            if (item.url) { window.open(item.url, '_blank'); return; }
+            showToast('无法播放该视频');
+        }
+
+        function renderAudios(filter) {
+            const list = document.getElementById('audioList');
+            let items = data.audios;
+            if (filter) items = items.filter(i => i.title&&i.title.includes(filter));
+            if (items.length === 0) {
+                list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎧</div><div class="empty-text">${filter?'没有找到相关音频':'还没有伴奏音频，快去添加第一个吧～'}</div></div>`;
+                return;
+            }
+            list.innerHTML = items.map(item => {
+                const idx = data.audios.indexOf(item);
+                const sz = item.fileSize?` · ${formatSize(item.fileSize)}`:'';
+                return `<div class="media-item" onclick="playAudio(${idx})">
+                    <div class="media-cover" style="background:linear-gradient(135deg,#DDA0DD,#BA55D3);">🎧</div>
+                    <div class="media-info"><h4>${item.title||'未命名音频'}</h4><p>${item.desc||('点击播放'+sz)}</p></div>
+                    <div class="media-play" style="background:linear-gradient(135deg,#DDA0DD,#BA55D3);">▶</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function playAudio(index) {
+            const item = data.audios[index];
+            if (item.fileId) {
+                try {
+                    showToast('正在加载音频...', 1500);
+                    const file = await getFileFromDB(item.fileId);
+                    if (file&&file.blob) { showPlayer(item.title, `<audio src="${URL.createObjectURL(file.blob)}" controls autoplay></audio>`); return; }
+                } catch(e) { console.error(e); showToast('音频加载失败'); }
+            }
+            if (item.url) { window.open(item.url, '_blank'); return; }
+            showToast('无法播放该音频');
+        }
+
+        function showPlayer(title, html) {
+            document.getElementById('playerTitle').textContent = title;
+            document.getElementById('playerContent').innerHTML = html;
+            document.getElementById('playerOverlay').classList.add('show');
+        }
+
+        function closePlayer() {
+            const content = document.getElementById('playerContent');
+            content.querySelectorAll('video,audio').forEach(el => { el.pause(); el.src=''; });
+            content.innerHTML = '';
+            document.getElementById('playerOverlay').classList.remove('show');
+        }
+
+        document.getElementById('playerOverlay').addEventListener('click', function(e) { if (e.target===this) closePlayer(); });
+
+        function closeDetail(e) { if (e&&e.target!==e.currentTarget) return; document.getElementById('detailOverlay').classList.remove('show'); }
+
+        function doSearch() { renderAll(document.getElementById('searchInput').value.trim()); }
+
+        function openAddModal() {
+            pendingFile = null;
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').textContent = '保存';
+            const titles = { lessons:'📝 添加课程记录', sheets:'🎼 添加谱子图片', videos:'🎬 添加伴奏视频', audios:'🎧 添加伴奏音频' };
+            document.getElementById('modalTitle').textContent = titles[currentTab];
+            const forms = {
+                lessons: `
+                    <div class="form-group"><label>上课日期</label><input type="date" id="f_date"></div>
+                    <div class="form-group"><label>课程标题</label><input type="text" id="f_title" placeholder="例如：第3课 - 小星星练习"></div>
+                    <div class="form-group"><label>课程内容 / 老师点评</label><textarea id="f_content" placeholder="记录本节课学习内容、老师点评、注意事项..."></textarea></div>
+                    <div class="form-group"><label>📌 课后作业</label><textarea id="f_homework" placeholder="记录本节课布置的课后作业，比如：练习小星星前4小节、每天练15分钟..."></textarea></div>
+                    <div class="form-group"><label>标签（逗号分隔）</label><input type="text" id="f_tags" placeholder="例如：声乐, 气息, 高音"></div>`,
+                sheets: `
+                    <div class="form-group"><label>上传谱子图片</label>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">🖼️</div><div class="upload-text">点击上传谱子图片</div>
+                            <div class="upload-hint">支持 JPG / PNG / HEIC<br>从手机相册或电脑文件夹选择</div>
+                            <input type="file" id="f_file" accept="image/*" onchange="handleFileSelect(this)">
+                        </div>
+                        <div class="upload-loading" id="uploadLoading"><div class="spinner"></div><p id="loadingText">正在读取文件...</p><div class="upload-progress"><div class="upload-progress-bar" id="progressBar"></div></div></div>
+                        <div id="filePreview"></div>
+                    </div>
+                    <div class="form-group"><label>谱子名称 <span style="color:#FF6B9D">*</span></label><input type="text" id="f_title" placeholder="例如：小星星 简谱"></div>
+                    <div class="form-group"><label>日期（可选）</label><input type="date" id="f_date"></div>
+                    <div class="form-group"><label>备注（可选）</label><textarea id="f_content" placeholder="这首曲子的练习要点..."></textarea></div>`,
+                videos: `
+                    <div class="form-group"><label>上传伴奏视频</label>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">🎬</div><div class="upload-text">点击上传伴奏视频</div>
+                            <div class="upload-hint">支持 MP4 / MOV / AVI<br>建议单个文件不超过 300MB</div>
+                            <input type="file" id="f_file" accept="video/*" onchange="handleFileSelect(this)">
+                        </div>
+                        <div class="upload-loading" id="uploadLoading"><div class="spinner"></div><p id="loadingText">正在读取视频文件...</p><div class="upload-progress"><div class="upload-progress-bar" id="progressBar"></div></div></div>
+                        <div id="filePreview"></div>
+                    </div>
+                    <div class="form-group"><label>视频名称 <span style="color:#FF6B9D">*</span></label><input type="text" id="f_title" placeholder="例如：小星星 伴奏视频"></div>
+                    <div class="form-group"><label>描述（可选）</label><textarea id="f_desc" placeholder="视频特点、调性、速度等..."></textarea></div>`,
+                audios: `
+                    <div class="form-group"><label>上传伴奏音频</label>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">🎧</div><div class="upload-text">点击上传伴奏音频</div>
+                            <div class="upload-hint">支持 MP3 / WAV / M4A / AAC<br>建议单个文件不超过 100MB</div>
+                            <input type="file" id="f_file" accept="audio/*" onchange="handleFileSelect(this)">
+                        </div>
+                        <div class="upload-loading" id="uploadLoading"><div class="spinner"></div><p id="loadingText">正在读取音频文件...</p><div class="upload-progress"><div class="upload-progress-bar" id="progressBar"></div></div></div>
+                        <div id="filePreview"></div>
+                    </div>
+                    <div class="form-group"><label>音频名称 <span style="color:#FF6B9D">*</span></label><input type="text" id="f_title" placeholder="例如：小星星 纯伴奏"></div>
+                    <div class="form-group"><label>描述（可选）</label><textarea id="f_desc" placeholder="调性、速度、伴奏乐器等..."></textarea></div>`
+            };
+            document.getElementById('modalForm').innerHTML = forms[currentTab];
+            document.getElementById('modalOverlay').classList.add('show');
+        }
+
+        async function handleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+            const maxSize = isImage ? 20*1024*1024 : (isVideo ? 300*1024*1024 : 100*1024*1024);
+            if (file.size > maxSize) { showToast(`文件太大（${formatSize(file.size)}），最大支持 ${formatSize(maxSize)}`); input.value=''; return; }
+            const uploadArea = document.getElementById('uploadArea');
+            const loading = document.getElementById('uploadLoading');
+            const progressBar = document.getElementById('progressBar');
+            if (uploadArea) uploadArea.style.display = 'none';
+            if (loading) loading.classList.add('show');
+            try {
+                let progress = 0;
+                const pi = setInterval(() => { progress += Math.random()*15; if (progress>90) progress=90; if (progressBar) progressBar.style.width = progress+'%'; }, 200);
+                const previewUrl = URL.createObjectURL(file);
+                let thumbnail = null;
+                if (isImage) {
+                    try { thumbnail = await generateThumbnail(file); } catch(e) { thumbnail = await fileToBase64(file); }
+                }
+                clearInterval(pi);
+                if (progressBar) progressBar.style.width = '100%';
+                pendingFile = { file, blob: file, name: file.name, type: file.type, size: file.size, thumbnail, previewUrl };
+                const pd = document.getElementById('filePreview');
+                let ph = '';
+                if (isImage) ph = `<div class="file-preview"><img src="${previewUrl}" alt=""><div class="file-name">📎 ${file.name}（${formatSize(file.size)}）</div></div>`;
+                else if (isVideo) ph = `<div class="file-preview"><video src="${previewUrl}" controls muted playsinline></video><div class="file-name">🎬 ${file.name}（${formatSize(file.size)}）</div></div>`;
+                else ph = `<div class="file-preview"><audio src="${previewUrl}" controls></audio><div class="file-name">🎧 ${file.name}（${formatSize(file.size)}）</div></div>`;
+                if (pd) pd.innerHTML = ph;
+                if (loading) loading.classList.remove('show');
+                const ti = document.getElementById('f_title');
+                if (ti && !ti.value) ti.value = file.name.replace(/\.[^/.]+$/, '');
+                showToast('文件读取成功！');
+            } catch(e) {
+                console.error(e);
+                if (loading) loading.classList.remove('show');
+                if (uploadArea) uploadArea.style.display = 'block';
+                showToast('文件读取失败，请换一个文件试试');
+                input.value = '';
+            }
+        }
+
+        function closeModal() {
+            if (pendingFile && pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
+            pendingFile = null;
+            document.getElementById('modalOverlay').classList.remove('show');
+        }
+
+        async function submitForm() {
+            const ti = document.getElementById('f_title');
+            const title = ti ? ti.value.trim() : '';
+            if (!title) { showToast('请填写名称/标题哦～'); return; }
+            if (currentTab !== 'lessons' && !pendingFile) { showToast('请先上传一个文件哦～'); return; }
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.textContent = '保存中...';
+            const item = { title, id: Date.now()+'_'+Math.random().toString(36).substr(2,5) };
+            try {
+                if (currentTab === 'lessons') {
+                    item.date = document.getElementById('f_date').value || new Date().toISOString().split('T')[0];
+                    item.content = document.getElementById('f_content').value;
+                    item.homework = document.getElementById('f_homework').value;
+                    item.tags = document.getElementById('f_tags').value;
+                    data.lessons.unshift(item);
+                } else {
+                    if (pendingFile) {
+                        const fid = 'file_'+item.id;
+                        showToast('正在保存文件...', 1500);
+                        await saveFileToDB(fid, pendingFile.blob, pendingFile.name, pendingFile.type);
+                        item.fileId = fid; item.fileName = pendingFile.name; item.fileType = pendingFile.type; item.fileSize = pendingFile.size;
+                        if (pendingFile.thumbnail) item.thumbnail = pendingFile.thumbnail;
+                    }
+                    if (currentTab === 'sheets') { item.date = document.getElementById('f_date').value; item.content = document.getElementById('f_content').value; data.sheets.unshift(item); }
+                    else if (currentTab === 'videos') { item.desc = document.getElementById('f_desc').value; data.videos.unshift(item); }
+                    else if (currentTab === 'audios') { item.desc = document.getElementById('f_desc').value; data.audios.unshift(item); }
+                }
+                saveData(); renderAll();
+                if (pendingFile && pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
+                pendingFile = null;
+                closeModal();
+                showToast('保存成功！🎉');
+            } catch(e) {
+                console.error(e);
+                showToast('保存失败：存储空间可能不足');
+            } finally {
+                btn.disabled = false; btn.textContent = '保存';
+            }
+        }
+
+        function closePage() { if (confirm('确定要离开小菠萝的音乐课堂吗？')) window.close(); }
+        function sharePage() {
+            if (navigator.share) navigator.share({ title:'小菠萝的音乐课堂', text:'记录每一次成长，珍藏每一段旋律', url:window.location.href });
+            else showToast('可以复制链接发给朋友哦～');
+        }
+        document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target===this) closeModal(); });
+
+        // 初始化：先迁移旧数据，再加载
+        (async function init() {
+            const migrated = migrateOldData();
+            if (migrated) showToast('已恢复您之前的记录！🍍', 3000);
+            try { await openDB(); } catch(e) { console.error('IndexedDB失败', e); }
+            loadData();
+        })();
+    </script>
+</body>
+</html>
